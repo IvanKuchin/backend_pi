@@ -22,7 +22,8 @@ using namespace std;
 #define	CURRENT_LOG_LEVEL			DEBUG
 
 #define	LOG_FILE_MAX_LENGTH			500 // user to strip long output to log file
-#define	LOG_FILE_NAME				string(LOGDIR) + DOMAIN_NAME + ".log"
+#define	LOG_FILE_NAME				string(LOGDIR) + "backend.log"
+// #define	LOG_FILE_NAME				string(LOGDIR) + DOMAIN_NAME + ".log"
 
 
 #define	MESSAGE_DEBUG(classname_legacy, action, mess) \
