@@ -2852,7 +2852,7 @@ auto isDemoDomain() -> bool
 
 	if(getenv("SERVER_NAME")) domain_name = getenv("SERVER_NAME");   /* Flawfinder: ignore */
 
-	if(domain_name.find("demo") != string::npos) result = true;
+	if(domain_name.find("demo.") != string::npos) result = true;
 
 	MESSAGE_DEBUG("", "", "result (" + to_string(result) + ")");
 
@@ -2862,7 +2862,7 @@ auto isDemoDomain() -> bool
 // return mydomain.org instead www.mydomain.org
 auto GetDomain() -> string
 {
-	auto	fqdn		= string(DOMAIN_NAME);
+	auto	fqdn		= string(getenv("SERVER_NAME"));   /* Flawfinder: ignore */
     auto    first_dot	= fqdn.rfind(".");
     auto    second_dot	= first_dot  == string::npos ? string::npos : fqdn.rfind(".", first_dot - 1);
     auto	result		= second_dot == string::npos ? "" : fqdn.substr(second_dot + 1);

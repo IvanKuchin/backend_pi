@@ -30,9 +30,9 @@ using namespace std;
 #define	SMTP_HOST					"127.0.0.1"
 #define	SMTP_PORT					25
 
-#define	MAIL_FILE_NAME				string(LOGDIR) + DOMAIN_NAME + ".mail"
-#define	MAIL_STDOUT					string(LOGDIR) + DOMAIN_NAME + ".mail.stdout"
-#define	MAIL_STDERR					string(LOGDIR) + DOMAIN_NAME + ".mail.stderr"
+#define	MAIL_FILE_NAME				string(LOGDIR) + "mail.msg"
+#define	MAIL_STDOUT					string(LOGDIR) + "mail.stdout"
+#define	MAIL_STDERR					string(LOGDIR) + "mail.stderr"
 #define	SENDMAIL_FILE_NAME			"/usr/sbin/sendmail"
 
 class CMail
