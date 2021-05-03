@@ -278,6 +278,11 @@ int CMysql::Connect(c_config * const config)
         MESSAGE_ERROR("", "", "no valid DB credentials found in the config file. Fallback credentials are used. This only acceptable for CI/CD workflow. Hardcoded credentials could be serious security flaw.");
     }
 
+    if(db_name.empty())
+    {
+        MESSAGE_ERROR("", "", "primary and fallback auth methods failed");
+    }
+
     return Connect(db_name, db_login, db_pass, db_host);
 }
 
