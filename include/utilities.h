@@ -93,7 +93,6 @@ auto			AllowMessageInNewsFeed(CUser *me, const string messageOwnerID, const stri
 auto			isPersistenceRateLimited(string REMOTE_ADDR, CMysql *)						-> bool;
 auto			isFilenameImage(const string &filename)										-> bool;
 auto			isFilenameVideo(const string &filename)										-> bool;
-auto			CopyFile(const string src, const string dst)								-> void;
 auto			GetCompanyDuplicates(CMysql *)												-> string;
 auto			GetPicturesWithEmptySet(CMysql *)											-> string;
 auto			GetPicturesWithUnknownMessage(CMysql *)										-> string;
@@ -161,7 +160,7 @@ auto			isFilenameVideo(const string &filename) -> bool;
 auto			GetFileExtension(const string &filename) -> string;
 auto 			getFileSize(const std::string& name) -> off_t;
 auto			CleanupFilename(string	filename) -> string;
-auto        	CopyFile(const string src, const string dst) -> void;
+auto        	CopyFile(const string &src, const string &dst) -> string;
 
 // --- helpdesk
 auto      		GetHelpdeskBaseUserInfoInJSONFormat(string dbQuery, CMysql *, CUser *) -> string;
