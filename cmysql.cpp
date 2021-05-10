@@ -268,16 +268,23 @@ int CMysql::Connect(c_config * const config)
 {
     auto        credentials = config->GetFromFile(CONFIG_SECRET, {"DB_NAME"s, "DB_LOGIN"s, "DB_PASSWORD"s, "DB_HOST"s});
     auto        valid_cred  = (credentials.size() ? true : false);
-    auto        db_name     = (valid_cred ? credentials["DB_NAME"]      : DB_FALLBACK_NAME);
-    auto        db_login    = (valid_cred ? credentials["DB_LOGIN"]     : DB_FALLBACK_LOGIN);
-    auto        db_pass     = (valid_cred ? credentials["DB_PASSWORD"]  : DB_FALLBACK_PASSWORD);
-    auto        db_host     = (valid_cred ? credentials["DB_HOST"]      : DB_FALLBACK_HOST);
+    auto        result      = -1;
 
-    if(!valid_cred)
+    if(valid_cred)
     {
-        if(db_name.length())
+        result = Connect(credentials["DB_NAME"], credentials["DB_LOGIN"], credentials["DB_PASSWORD"], credentials["DB_HOST"]);
+    }
+    else
+    {
+        auto        db_name     = DB_FALLBACK_NAME;
+        auto        db_login    = DB_FALLBACK_LOGIN;
+        auto        db_pass     = DB_FALLBACK_PASSWORD;
+        auto        db_host     = DB_FALLBACK_HOST;
+
+        if(db_name && db_login && db_pass && db_host)
         {
             MESSAGE_ERROR("", "", "no valid DB credentials found in the config file, fallback credentials are used. This type of autentication recommended for CI/CD workflows only.");
+            result = Connect(db_name, db_login, db_pass, db_host);
         }
         else
         {
@@ -285,8 +292,7 @@ int CMysql::Connect(c_config * const config)
         }
     }
 
-
-    return Connect(db_name, db_login, db_pass, db_host);
+    return result;
 }
 
 int CMysql::Query(const string &query)

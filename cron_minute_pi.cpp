@@ -82,7 +82,7 @@ int main()
 		if(db.Connect(&config) < 0)
 		{
 			MESSAGE_ERROR("", "", "can't connect to DB");
-			throw CExceptionHTML("MySql connection");
+			throw CException("MySql connection");
 		}
 
 		//--- start of minute cron main functionality
