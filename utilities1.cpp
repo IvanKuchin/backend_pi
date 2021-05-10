@@ -1286,8 +1286,9 @@ bool isPersistenceRateLimited(string REMOTE_ADDR, CMysql *db)
 	return result;
 }
 
-void CopyFile(const string src, const string dst)
+auto CopyFile(const string &src, const string &dst) -> string
 {
+	auto	error_message = ""s;
 	clock_t start, end;
 
 	MESSAGE_DEBUG("", "", "start (" + src + ", " + dst + ")");
@@ -1295,17 +1296,36 @@ void CopyFile(const string src, const string dst)
 	start = clock();
 
 	ifstream source(src.c_str(), ios::binary);
-	ofstream dest(dst.c_str(), ios::binary);
 
-	dest << source.rdbuf();
+	if(source.is_open())
+	{
+		ofstream dest(dst.c_str(), ios::binary);
 
-	source.close();
-	dest.close();
+		if(dest.is_open())
+		{
+			dest << source.rdbuf();
 
+			dest.close();
+		}
+		else
+		{
+			error_message = "fail to open destination file (" + dst + ")";
+			MESSAGE_ERROR("", "", error_message);
+		}
+
+		source.close();
+	}
+	else
+	{
+		error_message = "fail to open source file (" + src + ")";
+		MESSAGE_ERROR("", "", error_message);
+	}
 
 	end = clock();
 
 	MESSAGE_DEBUG("", "", "finish (time of file copying is " + to_string((end - start) / CLOCKS_PER_SEC) + " second)");
+
+	return error_message;
 }
 
 // --- admin function

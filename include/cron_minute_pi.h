@@ -6,14 +6,7 @@
 #include <string.h>
 
 #include "cactivator.h"
-#include "ccgi.h"
-#include "cmysql.h"
-#include "cuser.h"
-#include "cmail.h"
 #include "cstatistics.h"
-#include "utilities.h"
-#include "localy.h"
-#include "clog.h"
 
 #define	ACTIVATOR_EMAIL_CHANGE						60	// --- minutes
 

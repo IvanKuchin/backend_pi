@@ -134,7 +134,7 @@ int main()
 			CLog	log;
 
 			log.Write(ERROR, "Can not connect to mysql database");
-			throw CExceptionHTML("MySql connection");
+			throw CException("MySql connection");
 		}
 
 		indexPage.SetDB(&db);

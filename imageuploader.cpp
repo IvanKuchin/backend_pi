@@ -285,7 +285,7 @@ int main()
 		if(db.Connect(&config) < 0)
 		{
 			MESSAGE_ERROR("", "", "Can not connect to mysql database");
-			throw CExceptionHTML("MySql connection");
+			throw CException("MySql connection");
 		}
 
 		indexPage.SetDB(&db);
@@ -692,7 +692,7 @@ int main()
 												if(db1.Connect(&config) < 0)
 												{
 													MESSAGE_ERROR("", "", "Can not connect to mysql database");
-													throw CExceptionHTML("MySql connection");
+													throw CException("MySql connection");
 												}
 
 												if(db1.Query("SELECT * FROM `feed_images` where `id`=\"" + to_string(feed_mediaID) + "\";"))
