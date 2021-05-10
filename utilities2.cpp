@@ -2862,7 +2862,8 @@ auto isDemoDomain() -> bool
 // return mydomain.org instead www.mydomain.org
 auto GetDomain() -> string
 {
-	auto	fqdn		= string(getenv("SERVER_NAME"));   /* Flawfinder: ignore */
+	// --- !!! DO NOT change it to env variable. This function used by crontab, which doesn't have apache env vars
+	auto	fqdn		= string(DOMAIN_NAME);   /* Flawfinder: ignore */
     auto    first_dot	= fqdn.rfind(".");
     auto    second_dot	= first_dot  == string::npos ? string::npos : fqdn.rfind(".", first_dot - 1);
     auto	result		= second_dot == string::npos ? "" : fqdn.substr(second_dot + 1);
