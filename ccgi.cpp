@@ -174,14 +174,6 @@ void CCgi::OutString(const string &str, bool endlFlag = true)
 
 	cout << str;
 	if(endlFlag) cout << endl;
-
-/*
-	// --- debug warning too much output
-    {
-		CLog logFile;
-		logFile.Write(DEBUG, "----- ", str);
-    }
-*/
 }
 
 void CCgi::AddToContent(const string &str, bool endlFlag = true)
@@ -544,8 +536,7 @@ string CCgi::SessID_Create_HTTP_DB (int max_age)
 	{
 		if(!sessionDB.Save("Guest", remoteAddr, GetLanguage())) 
 		{
-			CLog	log;
-			log.Write(ERROR, "CCgi::" + string(__func__) + "(" + to_string(max_age) + ")[" + to_string(__LINE__) + "]: unable to save session in DB");
+			MESSAGE_DEBUG("", "", "unable to save session in DB");
 
 			return "";
 		}
@@ -553,18 +544,14 @@ string CCgi::SessID_Create_HTTP_DB (int max_age)
 		// --- AddCookie(name, value, expiration, max-age, domain, path)
 		AddCookie("sessid", sessionDB.GetID(), max_age, "", "/");
 
-		{
-			CLog	log;
-			log.Write(DEBUG, "CCgi::" + string(__func__) + "[" + to_string(__LINE__) + "]: Generate session: create session for user 'Guest' (", sessionDB.GetID(), ")");
-		}
+		MESSAGE_DEBUG("", "", "Generate session: create session for user 'Guest' (" + sessionDB.GetID() + ")");
 
 		return sessionDB.GetID();
 	}
 	else
 	{
 		{
-			CLog	log;
-			log.Write(DEBUG, "CCgi::" + string(__func__) + "[" + to_string(__LINE__) + "]: env variable REMOTE_ADDR isn't set");
+			MESSAGE_DEBUG("", "", "env variable REMOTE_ADDR isn't set");
 		}
 	}
 	return "";
@@ -584,29 +571,22 @@ bool CCgi::SessID_CheckConsistency(void) {
 
 bool CCgi::SessID_Update_HTTP_DB() 
 {
-
 	if(!sessionDB.Update()) 
 	{
-			CLog	log;
-
-			log.Write(ERROR, "CCgi::" + string(__func__) + "[" + to_string(__LINE__) + ": updating DB session");
-			throw CExceptionHTML("SQL error");		
+		MESSAGE_ERROR("", "", "updating DB session");
+		throw CExceptionHTML("SQL error");		
 	}
 
 	if(cookie.IsExist("sessid")) 
 	{
 		if(!CookieUpdateTS("sessid", (sessionDB.GetExpire() == 0 ? 0 : SESSION_LEN)))
 		{
-			CLog	log;
-
-			log.Write(ERROR, "CCgi::" + string(__func__) + "[" + to_string(__LINE__) + ": updating 'sessid' cookie TS(timestamp)");
+			MESSAGE_ERROR("", "", "updating 'sessid' cookie TS(timestamp)");
 		}
 	}
 	else 
 	{
-		CLog	log;
-
-		log.Write(ERROR, "CCgi::" + string(__func__) + "[" + to_string(__LINE__) + ": cookie sessid is not exists");
+		MESSAGE_ERROR("", "", "cookie sessid is not exists");
 
 		return false;
 	}
@@ -616,10 +596,7 @@ bool CCgi::SessID_Update_HTTP_DB()
 
 bool CCgi::Cookie_Expire() 
 {
-	{
-		CLog	log;
-		log.Write(DEBUG, "CCgi::" + string(__func__) + "[" + to_string(__LINE__) + "]: start sessid expiration");
-	}
+	MESSAGE_DEBUG("", "", "start sessid expiration");
 
 	if (cookie.IsExist("sessid")) 
 	{
@@ -635,28 +612,19 @@ bool CCgi::Cookie_InitialAction_Assign(string inviteHash)
 {
 	bool	result = false;
 
-	{
-		CLog	log;
-		log.Write(DEBUG, "CCgi::" + string(__func__) + "[" + to_string(__LINE__) + "]: start (inviteHash = " + inviteHash + ")");
-	}
+	MESSAGE_DEBUG("", "", "start (inviteHash = " + inviteHash + ")");
 
 	// --- AddCookie(name, value, expiration, max-age, domain, path)
 	AddCookie("initialactionid", inviteHash, nullptr, "", "/");
 
-	{
-		CLog	log;
-		log.Write(DEBUG, "CCgi::" + string(__func__) + "[" + to_string(__LINE__) + "]: finish (result = " + (result ? "true" : "false") + ")");
-	}
+	MESSAGE_DEBUG("", "", "finish (result = " + (result ? "true" : "false") + ")");
 
 	return result;
 }
 
 bool CCgi::Cookie_InitialAction_Expire() 
 {
-	{
-		CLog	log;
-		log.Write(DEBUG, "CCgi::" + string(__func__) + "[" + to_string(__LINE__) + "]: start");
-	}
+	MESSAGE_DEBUG("", "", "start");
 
 	if(cookie.IsExist("initialactionid")) 
 	{
