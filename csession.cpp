@@ -9,8 +9,6 @@ CSession::CSession() : db(NULL), cookies(NULL)
 	gettimeofday(&tv, NULL);
 	srand(tv.tv_sec * tv.tv_usec * 100000);  /* Flawfinder: ignore */
 
-	sessID = GetRandom(SESSION_LEN);
-
 	MMDB_usage = false;
 
 	MESSAGE_DEBUG("", "", "end");
@@ -229,14 +227,19 @@ bool CSession::Save()
 		throw CExceptionHTML("session error");
 	}
 
-	if(db->Query("INSERT INTO `sessions` (`id`, `user_id`, `country_auto`, `city_auto`, `lng`, `ip`, `time`,`expire` ) VALUES "
-				"(" + quoted(GetID()) + ", " + quoted(GetUserID()) + ", " + quoted(DetectCountry()) + ", " + quoted(DetectCity()) + ", " + quoted(GetLng()) + ", " + quoted(GetIP()) + ", NOW(), " + quoted(to_string(SESSION_LEN * 60)) + ");") != 0)
+	// --- make sure that new session is unique
+	do{
+		SetID(GetRandom(SESSION_LEN));
+	} while(isExist(GetID()));
+
+	if(db->InsertQuery("INSERT INTO `sessions` (`id`, `user_id`, `country_auto`, `city_auto`, `lng`, `ip`, `time`,`expire` ) VALUES "
+				"(" + quoted(GetID()) + ", " + quoted(GetUserID()) + ", " + quoted(DetectCountry()) + ", " + quoted(DetectCity()) + ", " + quoted(GetLng()) + ", " + quoted(GetIP()) + ", NOW(), " + quoted(to_string(SESSION_LEN * 60)) + ");"))
 	{
-		MESSAGE_ERROR("", "", "ERROR: in insert SQL-query");
+		result = true;
 	}
 	else
 	{
-		result = true;
+		MESSAGE_ERROR("", "", "ERROR: in insert SQL-query");
 	}
 
 	return result;
