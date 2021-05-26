@@ -254,7 +254,7 @@ int main()
 
 		log.Write(DEBUG, string(__func__) + ": catch CExceptionHTML: DEBUG exception reason: [", c.GetReason(), "]");
 
-		return(0);
+		return(-1);
 	}
 	catch(CException &c)
 	{
