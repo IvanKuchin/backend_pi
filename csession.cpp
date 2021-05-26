@@ -208,12 +208,6 @@ bool CSession::Save()
 
 		throw CExceptionHTML("session error");
 	}
-	if(GetID().empty())
-	{
-		MESSAGE_ERROR("", "", " id must be set");
-
-		throw CExceptionHTML("session error");
-	}
 	if(GetIP().empty())
 	{
 		MESSAGE_ERROR("", "", " ip must be set");
@@ -226,20 +220,29 @@ bool CSession::Save()
 
 		throw CExceptionHTML("session error");
 	}
-
-	// --- make sure that new session is unique
-	do{
-		SetID(GetRandom(SESSION_LEN));
-	} while(isExist(GetID()));
-
-	if(db->InsertQuery("INSERT INTO `sessions` (`id`, `user_id`, `country_auto`, `city_auto`, `lng`, `ip`, `time`,`expire` ) VALUES "
-				"(" + quoted(GetID()) + ", " + quoted(GetUserID()) + ", " + quoted(DetectCountry()) + ", " + quoted(DetectCity()) + ", " + quoted(GetLng()) + ", " + quoted(GetIP()) + ", NOW(), " + quoted(to_string(SESSION_LEN * 60)) + ");"))
+	if(GetID().empty())
 	{
-		result = true;
+		MESSAGE_DEBUG("", "", "generate unique sesison ID");
+
+		do{
+			SetID(GetRandom(SESSION_LEN));
+		} while(isExist(GetID()));
 	}
 	else
 	{
+		MESSAGE_ERROR("", "", "monitoring only. I wasn't able to find flow that can hit this line. If you see this entry, reverse engineer code to understand - how sessionID could be generated before saving it.");
+	}
+
+
+	db->Query("INSERT INTO `sessions` (`id`, `user_id`, `country_auto`, `city_auto`, `lng`, `ip`, `time`,`expire` ) VALUES "
+				"(" + quoted(GetID()) + ", " + quoted(GetUserID()) + ", " + quoted(DetectCountry()) + ", " + quoted(DetectCity()) + ", " + quoted(GetLng()) + ", " + quoted(GetIP()) + ", NOW(), " + quoted(to_string(SESSION_LEN * 60)) + ");");
+	if(db->isError())
+	{
 		MESSAGE_ERROR("", "", "ERROR: in insert SQL-query");
+	}
+	else
+	{
+		result = true;
 	}
 
 	return result;
