@@ -469,6 +469,50 @@ string					c_config::GetFromFile(const string &file, const string &keys)
 	return GetFromFile(file, vec_param)[keys];
 }
 
+map<string, string>		c_config::GetFromFullPathFile(const string &folder, const string &file, const vector<string> &keys, const map<string, string> &vars)
+{
+	MESSAGE_DEBUG("", "", "start");
+
+	map<string, string>		result;
+
+	if(folder.length())
+	{
+		if(file.length())
+		{
+			auto	saved_folder = GetConfigFolder();
+
+			SetConfigFolder(folder);
+			result = GetFromFile(file, keys, vars);
+			SetConfigFolder(saved_folder);
+		}
+		else
+		{
+			MESSAGE_ERROR("", "", "file is empty")
+		}
+	}
+	else
+	{
+		MESSAGE_ERROR("", "", "file is empty")
+	}
+
+	MESSAGE_DEBUG("", "", "finish (result size: " + to_string(result.size()) + ")");
+
+	return result;
+}
+
+map<string, string>		c_config::GetFromFullPathFile(const string &folder, const string &file, const vector<string> &keys)
+{
+	map <string, string> vars;
+	return GetFromFullPathFile(folder, file, keys, vars);
+}
+
+string					c_config::GetFromFullPathFile(const string &folder, const string &file, const string &keys)
+{
+	vector<string>	vec_param = {keys};
+	return GetFromFullPathFile(folder, file, vec_param)[keys];
+}
+
+
 ostream& operator<<(ostream& os, const c_config &var)
 {
 	os << string("test line");

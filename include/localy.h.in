@@ -18,7 +18,8 @@
 #define IMAGE_TEMP_DIRECTORY						string(IMAGE_DIRECTORY) + string("temp")
 
 #define	CONFIG_DIR									"${CONFIG_INSTALL_DIR}/"
-#define	CONFIG_SECRET								"secret"
+#define	SECRET_DIR									"${SECRET_INSTALL_DIR}/"
+#define	SECRET_FILE									"secret"
 
 #define	MMDB_fname									"${MAXMIND_INSTALL_DIR}/GeoLite2-City.mmdb"
 

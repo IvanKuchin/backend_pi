@@ -92,6 +92,10 @@ class c_config
 		map<string, string>		GetFromFile(const string &file, const vector<string> &keys);
 		string					GetFromFile(const string &file, const string &keys);
 
+		map<string, string>		GetFromFullPathFile(const string &folder, const string &file, const vector<string> &keys, const map<string, string> &vars);
+		map<string, string>		GetFromFullPathFile(const string &folder, const string &file, const vector<string> &keys);
+		string					GetFromFullPathFile(const string &folder, const string &file, const string &keys);
+
 		void					SetConfigFolder(const string &param)					{ config_folder = param; }
 		string					GetConfigFolder()										{ return config_folder; }
 
