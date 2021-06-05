@@ -483,8 +483,6 @@ CFiles *CCgi::GetFilesHandler()
 
 void CCgi::Redirect(string url)
 {
-    string	result;
-
 	MESSAGE_DEBUG("", "", "HTML redirect to: " + url);
 
     RegisterVariableForce("redirect_url", url);
@@ -494,8 +492,6 @@ void CCgi::Redirect(string url)
 
 void CCgi::RedirectHTTP(string url)
 {
-    string	result;
-
 	MESSAGE_DEBUG("", "", "HTTP redirect to: " + url);
 
 	cout << "Location: " << url << std::endl;
