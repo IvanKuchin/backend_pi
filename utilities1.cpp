@@ -1625,7 +1625,7 @@ string GetUserAvatarByUserID(string userID, CMysql *db)
 // --- input params:
 // --- 1) SQL WHERE statement
 // --- 2) db reference
-void	RemoveMessageImages(string sqlWhereStatement, CMysql *db)
+void	RemoveMessageImages(const string &sqlWhereStatement, CMysql *db)
 {
 	int			 affected;
 	ostringstream   ost;
