@@ -1627,17 +1627,10 @@ string GetUserAvatarByUserID(string userID, CMysql *db)
 // --- 2) db reference
 void	RemoveMessageImages(const string &sqlWhereStatement, CMysql *db)
 {
-	int			 affected;
-	ostringstream   ost;
+	MESSAGE_DEBUG("", "", "start (sqlWhereStatement: " + sqlWhereStatement + ")");
 
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: start (sqlWhereStatement: " + sqlWhereStatement + ")");
-	}
+	auto	affected = db->Query("select * from `feed_images` where " + sqlWhereStatement);
 
-	ost.str("");
-	ost << "select * from `feed_images` where " << sqlWhereStatement;
-	affected = db->Query(ost.str());
 	if(affected)
 	{
 		for(auto i = 0; i < affected; i++)
@@ -1647,10 +1640,7 @@ void	RemoveMessageImages(const string &sqlWhereStatement, CMysql *db)
 
 			if(mediaType == "image" || mediaType == "video")
 			{
-				{
-					CLog	log;
-					log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: file must be deleted [" + filename + "]");
-				}
+				MESSAGE_DEBUG("", "", "file must be deleted [" + filename + "]");
 
 				if(mediaType == "image") filename = IMAGE_FEED_DIRECTORY;
 				if(mediaType == "video") filename = VIDEO_FEED_DIRECTORY;
@@ -1667,30 +1657,19 @@ void	RemoveMessageImages(const string &sqlWhereStatement, CMysql *db)
 				}
 				else
 				{
-					CLog	log;
-					log.Write(ERROR, string(__func__) + "[" + to_string(__LINE__) +  "]:ERROR: file is not exists  [filename=" + filename + "]");
+					MESSAGE_ERROR("", "", "file doesn't exists  [filename=" + filename + "]");
 				}
 			}
 			else
 			{
-				{
-					CLog	log;
-					log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: mediaType[" + mediaType + "] doesn't have local file");
-				}
-
+				MESSAGE_ERROR("", "", "mediaType[" + mediaType + "] doesn't have local file");
 			}
-
 		}
 		// --- cleanup DB with images pre-populated for posted message
-		ost.str("");
-		ost << "delete from `feed_images` where " << sqlWhereStatement;
-		db->Query(ost.str());
+		db->Query("DELETE FROM `feed_images` WHERE " + sqlWhereStatement);
 	}
 
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: finish");
-	}
+	MESSAGE_DEBUG("", "", "finish");
 }
 
 // --- function removes message image from FileSystems and cleanup DB
