@@ -1629,7 +1629,7 @@ void	RemoveMessageImages(const string &sqlWhereStatement, CMysql *db)
 {
 	MESSAGE_DEBUG("", "", "start (sqlWhereStatement: " + sqlWhereStatement + ")");
 
-	auto	affected = db->Query("select * from `feed_images` where " + sqlWhereStatement);
+	auto	affected = db->Query("SELECT * FROM `feed_images` WHERE " + sqlWhereStatement);
 
 	if(affected)
 	{
