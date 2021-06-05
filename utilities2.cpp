@@ -509,8 +509,8 @@ bool AmIMessageOwner(string messageID, CUser *user, CMysql *db)
 	{
 		if(db->Query("SELECT `userId`,`srcType` FROM `feed` WHERE `actionTypeId`='11' AND `actionId`=\"" + messageID + "\";"))
 		{
-			string		messageOwnerID = db->Get(0, "userId");
-			string		messageOwnerType = db->Get(0, "srcType");
+			auto		messageOwnerID = db->Get(0, "userId");
+			auto		messageOwnerType = db->Get(0, "srcType");
 
 			if((messageOwnerType == "user") && (messageOwnerID == user->GetID()))
 			{
