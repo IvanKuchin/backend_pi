@@ -540,23 +540,17 @@ bool AmIMessageOwner(string messageID, CUser *user, CMysql *db)
 			}
 			else
 			{
-				{
-					MESSAGE_ERROR("", "", "unknown message type (id:" + messageID + ", type:" + messageOwnerType + ")");
-				}
+				MESSAGE_ERROR("", "", "unknown message type (id:" + messageID + ", type:" + messageOwnerType + ")");
 			}
 		}
 		else
 		{
-			{
-				MESSAGE_ERROR("", "", "message.id(" + messageID + ") not found");
-			}
+			MESSAGE_ERROR("", "", "message.id(" + messageID + ") not found");
 		}
 	}
 	else
 	{
-		{
-			MESSAGE_DEBUG("", "", "message.id(" + messageID + ") empty or 0");
-		}
+		MESSAGE_DEBUG("", "", "message.id(" + messageID + ") empty or 0");
 	}
 
 	MESSAGE_DEBUG("", "", "end (returning value is " + (result ? "true" : "false") + ")");
@@ -566,13 +560,11 @@ bool AmIMessageOwner(string messageID, CUser *user, CMysql *db)
 
 pair<string, string> GetMessageOwner(string messageID, CUser *user, CMysql *db)
 {
-	string		messageOwnerID = "";
-	string		messageOwnerType = "";
-	
-	{
-		MESSAGE_DEBUG("", "", "start (messageID: " + messageID + ")");
-	}
+	MESSAGE_DEBUG("", "", "start (messageID: " + messageID + ")");
 
+	auto		messageOwnerID		= ""s;
+	auto		messageOwnerType	= ""s;
+	
 	if(db->Query("SELECT `userId`,`srcType` FROM `feed` WHERE `actionTypeId`='11' AND `actionId`=\"" + messageID + "\";"))
 	{
 		messageOwnerID = db->Get(0, "userId");
@@ -580,26 +572,21 @@ pair<string, string> GetMessageOwner(string messageID, CUser *user, CMysql *db)
 	}
 	else
 	{
-		{
-			MESSAGE_ERROR("", "", "message.id(" + messageID + ") not found");
-		}
+		MESSAGE_ERROR("", "", "message.id(" + messageID + ") not found");
 	}
 
-	{
-		MESSAGE_DEBUG("", "", "end (returning value pair<messageOwnerType, messageOwnerID>(" + messageOwnerType + ", " + messageOwnerID + ")");
-	}
+	MESSAGE_DEBUG("", "", "end (returning value pair<messageOwnerType, messageOwnerID>(" + messageOwnerType + ", " + messageOwnerID + ")");
 
 	return make_pair(messageOwnerType, messageOwnerID);
 }
 
 string	GetUserSubscriptionsInJSONFormat(string sqlQuery, CMysql *db)
 {
-	int		affected;
-	string	result;
-
 	MESSAGE_DEBUG("", "", "start");
 
-	affected = db->Query(sqlQuery);
+	auto	result = ""s;
+	auto	affected = db->Query(sqlQuery);
+
 	if(affected)
 	{
 		for(int i = 0; i < affected; i++)
@@ -615,23 +602,19 @@ string	GetUserSubscriptionsInJSONFormat(string sqlQuery, CMysql *db)
 	}
 	else
 	{
-		{
-			MESSAGE_DEBUG("", "", "user have no active subscriptions to any company or group");
-		}
+		MESSAGE_DEBUG("", "", "user have no active subscriptions to any company or group");
 	}
 
-	{
-		MESSAGE_DEBUG("", "", "end (returning result length(" + to_string(result.length()) + ")");
-	}
+	MESSAGE_DEBUG("", "", "end (returning result length(" + to_string(result.length()) + ")");
 
 	return result;
 }
 
 string	SubscribeToCompany(string companyID, CUser *user, CMysql *db)
 {
-	ostringstream	ostResult;
-
 	MESSAGE_DEBUG("", "", "start");
+
+	ostringstream	ostResult;
 
 	ostResult.str("");
 
