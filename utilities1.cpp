@@ -1629,19 +1629,17 @@ void	RemoveMessageImages(const string &sqlWhereStatement, CMysql *db)
 {
 	MESSAGE_DEBUG("", "", "start (sqlWhereStatement: " + sqlWhereStatement + ")");
 
-	auto	affected = db->Query("SELECT * FROM `feed_images` WHERE " + sqlWhereStatement);
+	auto	affected = db->Query("SELECT * FROM `feed_images` WHERE " + sqlWhereStatement + ";");
 
 	if(affected)
 	{
 		for(auto i = 0; i < affected; i++)
 		{
-			string  filename = "";
-			string  mediaType = db->Get(i, "mediaType");
+			auto  filename	= ""s;
+			auto  mediaType	= db->Get(i, "mediaType");
 
 			if(mediaType == "image" || mediaType == "video")
 			{
-				MESSAGE_DEBUG("", "", "file must be deleted [" + filename + "]");
-
 				if(mediaType == "image") filename = IMAGE_FEED_DIRECTORY;
 				if(mediaType == "video") filename = VIDEO_FEED_DIRECTORY;
 
@@ -1650,6 +1648,7 @@ void	RemoveMessageImages(const string &sqlWhereStatement, CMysql *db)
 				filename +=  "/";
 				filename +=  db->Get(i, "filename");
 
+				MESSAGE_DEBUG("", "", "file must be deleted [" + filename + "]");
 
 				if(isFileExists(filename))
 				{
