@@ -334,10 +334,7 @@ int main()
 
 		if(messageID.length() && (AmIMessageOwner(messageID, &user, &db)))
 		{
-			pair<string, string> 	messageOwner = GetMessageOwner(messageID, &user, &db);
-
-			messageOwnerType = messageOwner.first;
-			messageOwnerID = messageOwner.second;
+			tie(messageOwnerType, messageOwnerID) = GetMessageOwner(messageID, &user, &db);
 		}
 		else
 		{

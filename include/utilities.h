@@ -99,7 +99,7 @@ auto			GetPicturesWithUnknownMessage(CMysql *)										-> string;
 auto			GetPicturesWithUnknownUser(CMysql *)										-> string;
 auto			GetRecommendationAdverse(CMysql *)											-> string;
 auto			GetUserAvatarByUserID(string userID, CMysql *)								-> string;
-auto			RemoveMessageImages(string sqlWhereStatement, CMysql *)						-> void;
+auto			RemoveMessageImages(const string &sqlWhereStatement, CMysql *)				-> void;
 auto			RemoveBookCover(string sqlWhereStatement, c_config *, CMysql *)				-> void;
 auto			GetUserTagsFromText(string srcMessage)										-> vector<string>;
 auto    		RemoveSpecifiedCover(string itemID, string itemType, c_config *, CMysql *)	-> bool;

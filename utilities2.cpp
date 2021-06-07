@@ -509,8 +509,8 @@ bool AmIMessageOwner(string messageID, CUser *user, CMysql *db)
 	{
 		if(db->Query("SELECT `userId`,`srcType` FROM `feed` WHERE `actionTypeId`='11' AND `actionId`=\"" + messageID + "\";"))
 		{
-			string		messageOwnerID = db->Get(0, "userId");
-			string		messageOwnerType = db->Get(0, "srcType");
+			auto		messageOwnerID = db->Get(0, "userId");
+			auto		messageOwnerType = db->Get(0, "srcType");
 
 			if((messageOwnerType == "user") && (messageOwnerID == user->GetID()))
 			{
@@ -540,23 +540,17 @@ bool AmIMessageOwner(string messageID, CUser *user, CMysql *db)
 			}
 			else
 			{
-				{
-					MESSAGE_ERROR("", "", "unknown message type (id:" + messageID + ", type:" + messageOwnerType + ")");
-				}
+				MESSAGE_ERROR("", "", "unknown message type (id:" + messageID + ", type:" + messageOwnerType + ")");
 			}
 		}
 		else
 		{
-			{
-				MESSAGE_ERROR("", "", "message.id(" + messageID + ") not found");
-			}
+			MESSAGE_ERROR("", "", "message.id(" + messageID + ") not found");
 		}
 	}
 	else
 	{
-		{
-			MESSAGE_DEBUG("", "", "message.id(" + messageID + ") empty or 0");
-		}
+		MESSAGE_DEBUG("", "", "message.id(" + messageID + ") empty or 0");
 	}
 
 	MESSAGE_DEBUG("", "", "end (returning value is " + (result ? "true" : "false") + ")");
@@ -566,13 +560,11 @@ bool AmIMessageOwner(string messageID, CUser *user, CMysql *db)
 
 pair<string, string> GetMessageOwner(string messageID, CUser *user, CMysql *db)
 {
-	string		messageOwnerID = "";
-	string		messageOwnerType = "";
-	
-	{
-		MESSAGE_DEBUG("", "", "start (messageID: " + messageID + ")");
-	}
+	MESSAGE_DEBUG("", "", "start (messageID: " + messageID + ")");
 
+	auto		messageOwnerID		= ""s;
+	auto		messageOwnerType	= ""s;
+	
 	if(db->Query("SELECT `userId`,`srcType` FROM `feed` WHERE `actionTypeId`='11' AND `actionId`=\"" + messageID + "\";"))
 	{
 		messageOwnerID = db->Get(0, "userId");
@@ -580,29 +572,24 @@ pair<string, string> GetMessageOwner(string messageID, CUser *user, CMysql *db)
 	}
 	else
 	{
-		{
-			MESSAGE_ERROR("", "", "message.id(" + messageID + ") not found");
-		}
+		MESSAGE_ERROR("", "", "message.id(" + messageID + ") not found");
 	}
 
-	{
-		MESSAGE_DEBUG("", "", "end (returning value pair<messageOwnerType, messageOwnerID>(" + messageOwnerType + ", " + messageOwnerID + ")");
-	}
+	MESSAGE_DEBUG("", "", "end (returning value pair<messageOwnerType, messageOwnerID>(" + messageOwnerType + ", " + messageOwnerID + ")");
 
 	return make_pair(messageOwnerType, messageOwnerID);
 }
 
 string	GetUserSubscriptionsInJSONFormat(string sqlQuery, CMysql *db)
 {
-	int		affected;
-	string	result;
-
 	MESSAGE_DEBUG("", "", "start");
 
-	affected = db->Query(sqlQuery);
+	auto	result = ""s;
+	auto	affected = db->Query(sqlQuery);
+
 	if(affected)
 	{
-		for(int i = 0; i < affected; i++)
+		for(auto i = 0; i < affected; i++)
 		{
 			if(result.length()) result += ",";
 			result +=	"{";
@@ -615,23 +602,19 @@ string	GetUserSubscriptionsInJSONFormat(string sqlQuery, CMysql *db)
 	}
 	else
 	{
-		{
-			MESSAGE_DEBUG("", "", "user have no active subscriptions to any company or group");
-		}
+		MESSAGE_DEBUG("", "", "user have no active subscriptions to any company or group");
 	}
 
-	{
-		MESSAGE_DEBUG("", "", "end (returning result length(" + to_string(result.length()) + ")");
-	}
+	MESSAGE_DEBUG("", "", "end (returning result length(" + to_string(result.length()) + ")");
 
 	return result;
 }
 
 string	SubscribeToCompany(string companyID, CUser *user, CMysql *db)
 {
-	ostringstream	ostResult;
-
 	MESSAGE_DEBUG("", "", "start");
+
+	ostringstream	ostResult;
 
 	ostResult.str("");
 
@@ -706,9 +689,7 @@ string	UnsubscribeFromCompany(string companyID, CUser *user, CMysql *db)
 
 			if(db->Query("SELECT `admin_userID` FROM `company` WHERE `id`=\"" + companyID + "\" AND `admin_userID`=\"" + user->GetID() + "\";"))
 			{
-				{
-					MESSAGE_DEBUG("", "", "user can't unsubscribe from own company [companyID: " + companyID + ", userID: " + user->GetID() + "]");
-				}
+				MESSAGE_DEBUG("", "", "user can't unsubscribe from own company [companyID: " + companyID + ", userID: " + user->GetID() + "]");
 
 				ostResult << "\"result\": \"error\",\"description\": \"Вы не можете отписаться от собственной компании\"";
 			}
@@ -846,9 +827,7 @@ string	UnsubscribeFromGroup(string groupID, CUser *user, CMysql *db)
 
 			if(db->Query("SELECT `owner_id` FROM `groups` WHERE `id`=\"" + groupID + "\" AND `owner_id`=\"" + user->GetID() + "\";"))
 			{
-				{
-					MESSAGE_DEBUG("", "", "user can't unsubscribe from own group [groupID: " + groupID + ", userID: " + user->GetID() + "]");
-				}
+				MESSAGE_DEBUG("", "", "user can't unsubscribe from own group [groupID: " + groupID + ", userID: " + user->GetID() + "]");
 
 				ostResult << "\"result\": \"error\",\"description\": \"Вы не можете отписаться от собственной группы\"";
 			}
@@ -966,25 +945,22 @@ bool isBotIP(string ip)
 
 bool isAdverseWordsHere(string text, CMysql *db)
 {
-	bool			result = false;
-	int				affected;
-
 	MESSAGE_DEBUG("", "", "start");
 
-	affected = db->Query("SELECT * FROM `dictionary_adverse`;");
+	auto	result		= false;
+	auto	affected	= db->Query("SELECT * FROM `dictionary_adverse`;");
+
 	if(affected)
 	{
 		text = toLower(text);
 
-		for(int i = 0; i < affected; i++)
+		for(auto i = 0; i < affected; i++)
 		{
-			string		checkingWord = db->Get(i, "word");
+			auto	checkingWord = db->Get(i, "word");
 
 			if(text.find(checkingWord) != string::npos)
 			{
-				{
-					MESSAGE_DEBUG("", "", "adverse word.id[" + db->Get(i, "id") + "]");
-				}
+				MESSAGE_DEBUG("", "", "adverse word.id[" + db->Get(i, "id") + "]");
 
 				result = true;
 				break;
@@ -993,30 +969,24 @@ bool isAdverseWordsHere(string text, CMysql *db)
 	}
 	else
 	{
-		{
-			MESSAGE_DEBUG("", "", "adverse_word table is empty");
-		}
-
+		MESSAGE_DEBUG("", "", "adverse_word table is empty");
 	}
-
 	
-	{
-		MESSAGE_DEBUG("", "", "end (result  = " + (result ? "true" : "false") + ")");
-	}
+	MESSAGE_DEBUG("", "", "end (result  = " + (result ? "true" : "false") + ")");
 	
 	return result;
 }
 
 string ParseGPSLongitude(const string longitudeStr)
 {
-	string  result = "";
-	smatch  cm;
-	regex   format1("[-+]?[[:digit:]]+(\\.[[:digit:]]+)?");
-	regex   format2("([EW])\\:[[:space:]]*([[:digit:]]+)((\\/)([[:digit:]]+))?\\,[[:space:]]*([[:digit:]]+)((\\/)([[:digit:]]+))?\\,[[:space:]]*([[:digit:]]+)((\\/)([[:digit:]]+))?", regex_constants::ECMAScript | regex_constants::icase);
-	regex   format3(".*unknown.*");
-	regex   format4(".[[:space:]]*");
-
 	MESSAGE_DEBUG("", "", "start(" + longitudeStr + ")");
+
+	auto	result = ""s;
+	smatch	cm;
+	regex	format1("[-+]?[[:digit:]]+(\\.[[:digit:]]+)?");
+	regex	format2("([EW])\\:[[:space:]]*([[:digit:]]+)((\\/)([[:digit:]]+))?\\,[[:space:]]*([[:digit:]]+)((\\/)([[:digit:]]+))?\\,[[:space:]]*([[:digit:]]+)((\\/)([[:digit:]]+))?", regex_constants::ECMAScript | regex_constants::icase);
+	regex	format3(".*unknown.*");
+	regex	format4(".[[:space:]]*");
 
 	// --- format: +74.56 or 74.56 or 74
 	if(regex_match(longitudeStr, format1))
@@ -1082,16 +1052,15 @@ string ParseGPSLongitude(const string longitudeStr)
 
 string ParseGPSLatitude(const string latitudeStr)
 {
-	string  result = "";
+	MESSAGE_DEBUG("", "", "start(" + latitudeStr + ")");
+
+	auto	result = ""s;
 	smatch  cm;
 	regex   format1("[-+]?[[:digit:]]+(\\.[[:digit:]]+)?");
 	regex   format2("([NS])\\:[[:space:]]*([[:digit:]]+)((\\/)([[:digit:]]+))?\\,[[:space:]]*([[:digit:]]+)((\\/)([[:digit:]]+))?\\,[[:space:]]*([[:digit:]]+)((\\/)([[:digit:]]+))?", regex_constants::ECMAScript | regex_constants::icase);
 	regex   format3(".*unknown.*");
 	regex   format4(".[[:space:]]*");
 
-	{
-		MESSAGE_DEBUG("", "", "start(" + latitudeStr + ")");
-	}
 	
 	// --- format: +74.56 or 74.56 or 74
 	if(regex_match(latitudeStr, regex(format1)))
@@ -1143,24 +1112,21 @@ string ParseGPSLatitude(const string latitudeStr)
 	else if(latitudeStr.length() == 0)
 	{
 	}
-
 	else
 	{
-			{
-				MESSAGE_ERROR("", "", " latitude(" + latitudeStr + ") didn't match any pattern");
-			}
+		MESSAGE_ERROR("", "", " latitude(" + latitudeStr + ") didn't match any pattern");
 	}
 
-	{
-		MESSAGE_DEBUG("", "", "finish (" + result + ")");
-	}
+	MESSAGE_DEBUG("", "", "finish (" + result + ")");
 
 	return result;
 }
 
 string ParseGPSAltitude(const string altitudeStr)
 {
-	string  result = "";
+	MESSAGE_DEBUG("", "", "start(" + altitudeStr + ")");
+
+	auto	result = ""s;
 	smatch  cm;
 	regex   format1("[-+]?[[:digit:]]+(\\.[[:digit:]]+)?");
 	regex   format2(".*\\:[[:space:]]*([[:digit:]]+)(\\/)([[:digit:]]+).*");
@@ -1169,7 +1135,6 @@ string ParseGPSAltitude(const string altitudeStr)
 	regex   format5("([[:digit:]]+)(\\/)([[:digit:]]+)\n.*");
 	regex   format6("[^[:digit:]]*([[:digit:]]+)(\\/)([[:digit:]]+)[^[:digit:]]*");
 
-	MESSAGE_DEBUG("", "", "start(" + altitudeStr + ")");
 	
 	// --- format: +74.56 or 74.56 or 74
 	if(regex_match(altitudeStr, regex(format1)))
@@ -1208,16 +1173,14 @@ string ParseGPSAltitude(const string altitudeStr)
 
 string ParseGPSSpeed(const string speedStr)
 {
-	string  result = "";
+	MESSAGE_DEBUG("", "", "start(" + speedStr + ")");
+
+	auto	result = ""s;
 	smatch  cm;
 	regex   format1("[-+]?[[:digit:]]+(\\.[[:digit:]]+)?");
 	regex   format2("K\\:[[:space:]]*([[:digit:]]+)(\\/)([[:digit:]]+)");
 	regex   format3(".*unknown.*");
 	regex   format4(".[[:space:]]*");
-
-	{
-		MESSAGE_DEBUG("", "", "start(" + speedStr + ")");
-	}
 
 	// --- format: +74.56 or 74.56 or 74
 	if(regex_match(speedStr, regex(format1)))
@@ -1246,25 +1209,22 @@ string ParseGPSSpeed(const string speedStr)
 	}
 	else
 	{
-			{
-				MESSAGE_ERROR("", "", " speed(" + speedStr + ") didn't match any pattern");
-			}
+		MESSAGE_ERROR("", "", " speed(" + speedStr + ") didn't match any pattern");
 	}
 
-	{
-		MESSAGE_DEBUG("", "", "finish (" + result + ")");
-	}
+	MESSAGE_DEBUG("", "", "finish (" + result + ")");
 
 	return result;
 }
 
 string	GetMySQLDateInJSONFormat(string dateString)
 {
-	string	result = "{}";
+	MESSAGE_DEBUG("", "", "start");
+
+	auto	result = "{}"s;
 	regex   format1("([[:digit:]]+)\\-([[:digit:]]+)\\-([[:digit:]]+)");
 	smatch  cm;
 
-	MESSAGE_DEBUG("", "", "start");
 
 	if(regex_match(dateString, cm, format1))
 	{
@@ -1304,10 +1264,7 @@ string GetCompanyPositionsInJSONFormat(string dbQuery, CMysql *db, CUser *user)
 	int						affected;
 	vector<ItemClass>		eventsList;
 
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) + "]: start");
-	}
+	MESSAGE_DEBUG("", "", "start");
 
 	ostFinal.str("");
 
@@ -1318,7 +1275,7 @@ string GetCompanyPositionsInJSONFormat(string dbQuery, CMysql *db, CUser *user)
 		eventsList.reserve(eventCounter);  // --- reserving allows avoid moving vector in memory
 											// --- to fit vector into continuous memory piece
 
-		for(int i = 0; i < affected; i++)
+		for(auto i = 0; i < affected; i++)
 		{
 			ItemClass	event;
 
@@ -1329,7 +1286,7 @@ string GetCompanyPositionsInJSONFormat(string dbQuery, CMysql *db, CUser *user)
 			eventsList.push_back(event);
 		}
 
-		for(int i = 0; i < eventCounter; i++)
+		for(auto i = 0; i < eventCounter; i++)
 		{
 				if(ostFinal.str().length()) ostFinal << ", ";
 
@@ -1368,10 +1325,7 @@ string GetSiteThemesInJSONFormat(string dbQuery, CMysql *db, CUser *user)
 	int						affected;
 	vector<ItemClass>		eventsList;
 
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) + "]: start");
-	}
+	MESSAGE_DEBUG("", "", "start");
 
 	ostFinal.str("");
 
@@ -1382,7 +1336,7 @@ string GetSiteThemesInJSONFormat(string dbQuery, CMysql *db, CUser *user)
 		eventsList.reserve(eventCounter);  // --- reserving allows avoid moving vector in memory
 											// --- to fit vector into continuous memory piece
 
-		for(int i = 0; i < affected; i++)
+		for(auto i = 0; i < affected; i++)
 		{
 			ItemClass	event;
 
@@ -1393,7 +1347,7 @@ string GetSiteThemesInJSONFormat(string dbQuery, CMysql *db, CUser *user)
 			eventsList.push_back(event);
 		}
 
-		for(int i = 0; i < eventCounter; i++)
+		for(auto i = 0; i < eventCounter; i++)
 		{
 				if(ostFinal.str().length()) ostFinal << ", ";
 
@@ -1502,7 +1456,7 @@ string GetBankInJSONFormat(string sqlQuery, CMysql *db, CUser *user)
 	affected = db->Query(sqlQuery);
 	if(affected)
 	{
-		for(int i = 0; i < affected; i++)
+		for(auto i = 0; i < affected; i++)
 		{
 			ItemClass	item;
 
@@ -1778,7 +1732,7 @@ auto	GetHelpDeskTicketsInJSONFormat(string sqlQuery, CMysql *db, CUser *user) ->
 	affected = db->Query(sqlQuery);
 	if(affected)
 	{
-		for(int i = 0; i < affected; i++)
+		for(auto i = 0; i < affected; i++)
 		{
 			ItemClass	item;
 
@@ -1837,7 +1791,7 @@ auto	GetHelpDeskTicketHistoryInJSONFormat(string sqlQuery, CMysql *db, CUser *us
 	affected = db->Query(sqlQuery);
 	if(affected)
 	{
-		for(int i = 0; i < affected; i++)
+		for(auto i = 0; i < affected; i++)
 		{
 			ItemClass	item;
 
@@ -1897,7 +1851,7 @@ auto	GetHelpDeskTicketAttachInJSONFormat(string sqlQuery, CMysql *db, CUser *use
 	affected = db->Query(sqlQuery);
 	if(affected)
 	{
-		for(int i = 0; i < affected; i++)
+		for(auto i = 0; i < affected; i++)
 		{
 			ItemClass	item;
 
@@ -1986,7 +1940,7 @@ auto	GetFAQInJSONFormat(string sqlQuery, CMysql *db, CUser *user) -> string
 	affected = db->Query(sqlQuery);
 	if(affected)
 	{
-		for(int i = 0; i < affected; i++)
+		for(auto i = 0; i < affected; i++)
 		{
 			ItemClass	item;
 
@@ -2381,7 +2335,7 @@ auto	GetGeoCountryListInJSONFormat(string dbQuery, CMysql *db, CUser *user) -> s
 
 	if(affected)
 	{
-		for(int i = 0; i < affected; i++)
+		for(auto i = 0; i < affected; i++)
 		{
 			ItemClass	item;
 
