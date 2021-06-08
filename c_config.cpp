@@ -469,6 +469,7 @@ string					c_config::GetFromFile(const string &file, const string &keys)
 	return GetFromFile(file, vec_param)[keys];
 }
 
+/*
 map<string, string>		c_config::GetFromFullPathFile(const string &folder, const string &file, const vector<string> &keys, const map<string, string> &vars)
 {
 	MESSAGE_DEBUG("", "", "start");
@@ -511,7 +512,7 @@ string					c_config::GetFromFullPathFile(const string &folder, const string &fil
 	vector<string>	vec_param = {keys};
 	return GetFromFullPathFile(folder, file, vec_param)[keys];
 }
-
+*/
 
 ostream& operator<<(ostream& os, const c_config &var)
 {
