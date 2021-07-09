@@ -214,6 +214,8 @@ class CLog
 					fs << localtimeBuffer << "." << msCount << "";
 			    }
 
+			    // --- do NOT change log format !!!
+			    // --- logmessages parsed by fluent-bit_app-log_parser with regular expression
 				fs << "[" << processID << "] " << SpellLogLevel(level) << ": " << mess << endl;
 
 			    fs.close();
