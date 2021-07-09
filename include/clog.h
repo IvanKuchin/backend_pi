@@ -211,13 +211,10 @@ class CLog
 
 			    	if(msCount.length() > 6) msCount = msCount.substr(msCount.length() - 6, 6);
 
-					fs << localtimeBuffer << "." << msCount << "[" << processID << "] " << (level ? SpellLogLevel(level) + ":" : "") << mess << endl;
-					// fprintf(fh, "%s", ost.str().c_str());
+					fs << localtimeBuffer << "." << msCount << "";
 			    }
-			    else
-			    {
-					fs << "[" << processID << "] " << (level ? SpellLogLevel(level) + ":" : "") << mess << endl;
-			    }
+
+				fs << "[" << processID << "] " << SpellLogLevel(level) << ": " << mess << endl;
 
 			    fs.close();
 			}
