@@ -15,9 +15,10 @@ using namespace std;
 #include "localy.h"
 
 #define DEBUG		0
-#define	WARNING		1	// --- this severity is the lowest recommended for production
-#define	ERROR		2
-#define	PANIC		3
+#define	INFO		1	// --- this severity is the lowest recommended for production
+#define	WARNING		2
+#define	ERROR		3
+#define	PANIC		4
 
 #define	CURRENT_LOG_LEVEL			DEBUG
 
@@ -26,7 +27,7 @@ using namespace std;
 // #define	LOG_FILE_NAME				string(LOGDIR) + DOMAIN_NAME + ".log"
 
 
-#define	MESSAGE_DEBUG(classname_legacy, action, mess) \
+#define	LOG_MESSAGE(severity, classname_legacy, action, mess) \
 { \
 	CLog	obj; \
 	string	pretty = __PRETTY_FUNCTION__;  \
@@ -54,101 +55,14 @@ using namespace std;
     }\
 	if(string(action).length()) action_output = " "s + action + ":"; \
 \
-	obj.Write(DEBUG, classname + string(__func__) + "[" + to_string(__LINE__) + "]" + action_output + " " + mess); \
+	obj.Write(severity, classname + string(__func__) + "[" + to_string(__LINE__) + "]" + action_output + " " + mess); \
 }
 
-#define	MESSAGE_WARNING(classname_legacy, action, mess) \
-{ \
-	CLog	obj; \
-	string	pretty = __PRETTY_FUNCTION__;  \
-    auto    classname = ""s; \
-	auto    action_output = ""s; \
-    auto    func_name_finish = pretty.find("(");\
-    \
-    if(func_name_finish != string::npos)\
-    {\
-        auto    func_name_start = pretty.find_last_of(" :", func_name_finish);\
-        auto    class_name_start = pretty.find_last_of(" ", func_name_finish);\
-        auto    class_separator = pretty.find("::");\
-\
-    	if(\
-    	    (func_name_start != string::npos) &&\
-    	    (class_name_start != string::npos) &&\
-    	    (class_name_start < func_name_finish - 3)\
-    	    ) \
-    	{ classname = pretty.substr(class_name_start + 1, func_name_start - class_name_start); } \
-    	else if(\
-    	    (class_separator != string::npos) &&\
-    	    (class_name_start == string::npos)\
-    	    )\
-    	{ classname = pretty.substr(0, class_separator + 2); /* --- this case address constructors / destructors "Class1::~Class1()"  */ } \
-    }\
-	if(string(action).length()) action_output = " "s + action + ":"; \
-\
-	obj.Write(WARNING, classname + string(__func__) + "[" + to_string(__LINE__) + "]" + action_output + " " + mess); \
-}
-
-#define	MESSAGE_ERROR(classname_legacy, action, mess) \
-{ \
-	CLog	obj; \
-	string	pretty = __PRETTY_FUNCTION__;  \
-    auto    classname = ""s; \
-	auto    action_output = ""s; \
-    auto    func_name_finish = pretty.find("(");\
-    \
-    if(func_name_finish != string::npos)\
-    {\
-        auto    func_name_start = pretty.find_last_of(" :", func_name_finish);\
-        auto    class_name_start = pretty.find_last_of(" ", func_name_finish);\
-        auto    class_separator = pretty.find("::");\
-\
-    	if(\
-    	    (func_name_start != string::npos) &&\
-    	    (class_name_start != string::npos) &&\
-    	    (class_name_start < func_name_finish - 3)\
-    	    ) \
-    	{ classname = pretty.substr(class_name_start + 1, func_name_start - class_name_start); } \
-    	else if(\
-    	    (class_separator != string::npos) &&\
-    	    (class_name_start == string::npos)\
-    	    )\
-    	{ classname = pretty.substr(0, class_separator + 2); } \
-    }\
-	if(string(action).length()) action_output = " "s + action + ":"; \
-\
-	obj.Write(ERROR, classname + string(__func__) + "[" + to_string(__LINE__) + "]" + action_output + " " + mess); \
-}
-
-#define	MESSAGE_PANIC(classname_legacy, action, mess) \
-{ \
-	CLog	obj; \
-	string	pretty = __PRETTY_FUNCTION__;  \
-    auto    classname = ""s; \
-	auto    action_output = ""s; \
-    auto    func_name_finish = pretty.find("(");\
-    \
-    if(func_name_finish != string::npos)\
-    {\
-        auto    func_name_start = pretty.find_last_of(" :", func_name_finish);\
-        auto    class_name_start = pretty.find_last_of(" ", func_name_finish);\
-        auto    class_separator = pretty.find("::");\
-\
-    	if(\
-    	    (func_name_start != string::npos) &&\
-    	    (class_name_start != string::npos) &&\
-    	    (class_name_start < func_name_finish - 3)\
-    	    ) \
-    	{ classname = pretty.substr(class_name_start + 1, func_name_start - class_name_start); } \
-    	else if(\
-    	    (class_separator != string::npos) &&\
-    	    (class_name_start == string::npos)\
-    	    )\
-    	{ classname = pretty.substr(0, class_separator + 2); } \
-    }\
-	if(string(action).length()) action_output = " "s + action + ":"; \
-\
-	obj.Write(PANIC, classname + string(__func__) + "[" + to_string(__LINE__) + "]" + action_output + " " + mess); \
-}
+#define	MESSAGE_DEBUG(classname_legacy, action, mess)	LOG_MESSAGE(DEBUG,		classname_legacy, action, mess)
+#define	MESSAGE_INFO(classname_legacy, action, mess)	LOG_MESSAGE(INFO,		classname_legacy, action, mess)
+#define	MESSAGE_WARNING(classname_legacy, action, mess)	LOG_MESSAGE(WARNING,	classname_legacy, action, mess)
+#define	MESSAGE_ERROR(classname_legacy, action, mess)	LOG_MESSAGE(ERROR,		classname_legacy, action, mess)
+#define	MESSAGE_PANIC(classname_legacy, action, mess)	LOG_MESSAGE(PANIC,		classname_legacy, action, mess)
 
 using namespace std::chrono;
 
@@ -160,11 +74,12 @@ class CLog
     	
 		string	SpellLogLevel(int level)
 		{
-			return  (level == 0 ? "DEBUG" :
-				    (level == 1 ? "WARNING" :
-				    (level == 2 ? "ERROR" :
-				    (level == 3 ? "PANIC" :
-				    			 "UNKNOWN"))));
+			return  (level == DEBUG		? "DEBUG" :
+				    (level == INFO		? "INFO" :
+				    (level == WARNING	? "WARNING" :
+				    (level == ERROR		? "ERROR" :
+				    (level == PANIC		? "PANIC" :
+				    			 		  "UNKNOWN")))));
 		};
 
     public:
