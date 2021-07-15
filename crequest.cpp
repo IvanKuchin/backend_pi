@@ -59,8 +59,7 @@ CPost::CPost()
 
 	if(tmpData == NULL)
 	{
-		CLog log;
-		log.Write(ERROR, "CPost::" + string(__func__) + "[" + to_string(__LINE__) + "]: ERROR: environment variable CONTENT_LENGTH is not set.");
+		MESSAGE_ERROR("", "","environment variable CONTENT_LENGTH is not set.");
 		paramCount = -1;
 		return;
 	}
@@ -876,8 +875,7 @@ void CRequest::RegisterURLVariables(CVars *v, CFiles *f)
 
     if(methodType == NULL)
     {
-		CLog	log;
-        log.Write(ERROR, "CRequest::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: environment variable REQUEST_METHOD is not set");
+        MESSAGE_ERROR("", "", "environment variable REQUEST_METHOD is not set");
 
 		return;
     }
@@ -920,7 +918,7 @@ void CRequest::RegisterURLVariables(CVars *v, CFiles *f)
 
 		if(url->isFileName(i))
 		{
-			MESSAGE_DEBUG("", "", "HTTP POST parameter #" + to_string(i) + " is filename [" + url->GetFileName(i) + "], size [" + to_string(url->ParamValueSize(i)) + "]");
+			MESSAGE_INFO("", "", "HTTP POST parameter #" + to_string(i) + " is filename [" + url->GetFileName(i) + "], size [" + to_string(url->ParamValueSize(i)) + "]");
 
 			files->Add(url->GetFileName(i), value, url->ParamValueSize(i));
 		}
@@ -932,7 +930,7 @@ void CRequest::RegisterURLVariables(CVars *v, CFiles *f)
 			s_name = WebString(s_name);
 			s_value = WebString(s_value);
 
-			MESSAGE_DEBUG("", "", "HTTP parameter #" + to_string(i) + " [" + s_name + "=" + (s_value) + "]");
+			MESSAGE_INFO("", "", "HTTP parameter #" + to_string(i) + " [" + s_name + "=" + (s_value) + "]");
 
 			vars->Add(s_name, s_value);
 
