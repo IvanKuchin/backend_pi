@@ -69,21 +69,14 @@ CPost::CPost()
 	queryString = (char *)malloc(contentLength + 1);
 	if(queryString == NULL)
 	{
-		CLog log;
-		log.Write(ERROR, "CPost::" + string(__func__) + "[" + to_string(__LINE__) + "]: ERROR error in allocating memory (", tmpData, ") bytes");
+		MESSAGE_ERROR("", "", "error in allocating memory (" + tmpData + ") bytes");
 		throw CException("error in allocating memory");
 	}
 
 	blocksReadFromSocket = fread(queryString, contentLength, 1, stdin);
 	if(blocksReadFromSocket != static_cast<size_t>(1))
 	{
-		{
-			CLog log;
-			ostringstream	ost;
-			ost.str("");
-			ost << "CPost::" << string(__func__) << "[" << to_string(__LINE__) << "]: ERROR: partial read from socket (waited 1 block with " << contentLength << " bytes, read " << blocksReadFromSocket << " blocks)";
-			log.Write(ERROR, ost.str());
-		}
+		MESSAGE_ERROR("", "", "partial read from socket (waited 1 block with " + to_string(contentLength) + " bytes, read " + to_string(blocksReadFromSocket) + " blocks)")
 	}
 	queryString[contentLength] = 0;
 
@@ -123,8 +116,7 @@ int CPost::CalculateVars()
     tmp = reminder = queryString;
     if(tmp == NULL)
     {
-		CLog	log;
-		log.Write(ERROR, "CPost::" + string(__func__) + "[" + to_string(__LINE__) + "]: ERROR: POST data is empty");
+        MESSAGE_ERROR("", "", "POST data is empty");
 		return -1;
     }
 
@@ -183,8 +175,7 @@ char *CPost::ParamName(int number)
     tmp = reminder = queryString;
     if(tmp == NULL)
     {
-		CLog	log;
-		log.Write(ERROR, "CPost::" + string(__func__) + "[" + to_string(__LINE__) + "]: ERROR: the POST data is empty (CPost::ParamName)");
+		MESSAGE_ERROR("", "", "the POST data is empty (CPost::ParamName)");
 
 		return NULL;
     }
@@ -256,8 +247,7 @@ char *CPost::ParamName(int number)
 				result = (char *)malloc(p2 - p1);
 				if(result == NULL)
 				{
-					CLog	log;
-					log.Write(ERROR, "CPost::" + string(__func__) + "[" + to_string(__LINE__) + "]: ERROR: memory allocation error");
+					MESSAGE_ERROR("", "", "memory allocation error");
 					return NULL;
 				}
 
@@ -361,10 +351,7 @@ string CPost::GetFileName(int number)
 	char	*tmp;
 	int 	i = 0;
 
-	{
-		CLog	log;
-		log.Write(DEBUG, "CPost::" + string(__func__) + "(order = " + to_string(number) + ")[" + to_string(__LINE__) + "]: start");
-	}
+	MESSAGE_DEBUG("", "", "start");
 
 	tmp = queryString;
 	result = "";
@@ -396,9 +383,7 @@ string CPost::GetFileName(int number)
 					memcpy(fileName, p1, p2 - p1 - 1);    /* Flawfinder: ignore */
 				else
 				{
-					CLog	log;
-
-					log.Write(ERROR, "CPost::" + string(__func__) + "[" + to_string(__LINE__) + "]: ERROR: file name too long !");
+					MESSAGE_ERROR("", "", "file name too long !");
 					throw CException("file name too long");
 				}
 
@@ -454,10 +439,7 @@ string CPost::GetFileName(int number)
 	}
 */
 
-	{
-		CLog	log;
-		log.Write(DEBUG, "CPost::" + string(__func__) + "(order = " + to_string(number) + ")[" + to_string(__LINE__) + "]: finish (result = " + result + ")");
-	}
+	MESSAGE_DEBUG("", "", "finish (result = " + result + ")");
 
 	return result;
 }
@@ -472,11 +454,7 @@ char *CPost::ParamValue(int number)
     tmp = reminder = queryString;
     if(tmp == NULL)
     {
-		CLog			log;
-		ostringstream	ost;
-
-		ost << "CPost::" << string(__func__) << "(" << number << ")[" << to_string(__LINE__) << "]: ERROR: environment variable QUERY_STRING is not set";
-		log.Write(ERROR, ost.str());
+		MESSAGE_ERROR("", "", "environment variable QUERY_STRING is not set");
 
 		return NULL;
     }
@@ -588,13 +566,7 @@ char *CPost::ParamValue(int number)
 			if(p2 == NULL) p2 = queryString + contentLength - 1; else p2 -= newLineCharCount; // >> 1; // --- removed due to extra 10 13 chars has been found on Windows uploading
 			i++;
 	/*
-	{
-		CLog	log;
-		ostringstream ost;
-
-		ost << "1) p2=" << (p2 - queryString) << " p1=" << (p1 - queryString) << " p2-p1=" << (p2-p1);
-		log.Write(DEBUG, ost.str());
-	}
+		MESSGAE_DEBUG("", "", "1) p2=" + to_string((p2 - queryString)) + " p1=" + to_string(p1 - queryString) + " p2-p1=" + to_string(p2-p1));
 	*/
 			if(i == number)
 			{
@@ -603,11 +575,7 @@ char *CPost::ParamValue(int number)
 				result = (char *)malloc(p2 - p1 + 1);
 				if(result == NULL)
 				{
-					CLog	log;
-					ostringstream	ost;
-
-					ost << "CPost::" << string(__func__) << "(" << number << ")[" << to_string(__LINE__) << "] line 638: ERROR memory allocation error. Need " << p2 - p1 + 1 << " bytes";
-					log.Write(ERROR, ost.str());
+					MESSAGE_ERROR("", "", " memory allocation error. Need " + to_string(p2 - p1 + 1) + " bytes");
 					return NULL;
 				}
 
@@ -646,13 +614,7 @@ char *CPost::ParamValue(int number)
 		if(p2 == string::npos) p2 = contentLength; else p2 -= newLineCharCount >> 1;
 		i++;
 
-{
-	CLog	log;
-	ostringstream ost;
-
-	ost << "1) p2=" << p2 << " p1=" << p1 << " p2-p1=" << (p2-p1);
-	log.Write(DEBUG, ost.str());
-}
+		MESSAGE_DEBUG("", "", "1) p2=" + to_string(p2) + " p1=" + to_string(p1) + " p2-p1=" + to_string(p2-p1))
 
 		if(i == number)
 		{
@@ -661,8 +623,7 @@ char *CPost::ParamValue(int number)
 			result = (char *)malloc(p2 - p1 + 1);
 			if(result == NULL)
 			{
-				CLog	log;
-				log.Write(ERROR, "memory allocation error");
+				MESSAGE_ERROR("", "", "memory allocation error");
 				return NULL;
 			}
 
@@ -681,28 +642,23 @@ char *CPost::ParamValue(int number)
 int CPost::ParamValueSize(int number)
 {
     char	*tmp, *reminder;
-    bool	isFound = false;
-    int		i;
+    auto	isFound = false;
+    auto	i = 0;
     char	*result = NULL;
 
     tmp = reminder = queryString;
     if(tmp == NULL)
     {
-		CLog	log;
-		log.Write(ERROR, "int CPost::ParamValueSize(int number): ERROR environment variable QUERY_STRING is not set");
+		MESSAGE_ERROR("", "", "environment variable QUERY_STRING is not set");
 
 		return -1;
     }
-
-    i = 0;
 
     if(!isContentMultipart())
     {
 
 	    {
-			CLog	log;
-			log.Write(DEBUG, "int CPost::ParamValueSize(int number): ");
-
+			MESSAGE_ERROR("", "", "http request is not a multipart type");
 			return -1;
 	    }
 
@@ -729,9 +685,8 @@ int CPost::ParamValueSize(int number)
 			result = (char *)malloc(1);
 			if(result == NULL)
 			{
-			CLog	log;
-			log.Write(ERROR, "int CPost::ParamValueSize(int number): ERROR memory allocation error");
-			return -1;
+				MESSAGE_ERROR("", "", "memory allocation error");
+				return -1;
 			}
 			memset(result, 0, 1);
 		}
