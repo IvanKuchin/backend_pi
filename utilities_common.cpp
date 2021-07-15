@@ -32,7 +32,7 @@ static auto LogGitCommitID(CCgi *indexPage)
 		ifs.close();
 
 		indexPage->RegisterVariableForce("git_commit_id", result);
-		MESSAGE_WARNING("", "", "git commit id: " + result);
+		MESSAGE_INFO("", "", "git commit id: " + result);
 	}
 	else
 	{
