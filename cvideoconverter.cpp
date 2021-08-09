@@ -328,54 +328,6 @@ bool CVideoConverter::FirstPhase()
 			argv[6] = NULL;
 
 			MESSAGE_DEBUG("", "", "video scaled down to " + scaleArg);
-
-/*
-			// --- horizontal video , just scale
-			// --- vertical vide add overlay to make it horizontal
-			if(_width > _height)
-			{
-				double	videoScaleWidth = _width / FEEDVIDEO_MAX_WIDTH;
-				double	videoScaleHeight = _height / FEEDVIDEO_MAX_HEIGHT;
-				double	videoScaleMax = (videoScaleWidth > videoScaleHeight ? videoScaleWidth : videoScaleHeight);
-				double	videoScaleFinalWidth = _width;
-				double	videoScaleFinalHeight = _height;
-
-				if(videoScaleMax > 1)
-				{
-					videoScaleFinalWidth = _width / videoScaleMax;
-					videoScaleFinalHeight = _height / videoScaleMax;
-				}
-
-				memset(scaleArg, 0, sizeof(scaleArg));
-				sprintf(scaleArg, "scale=%d:%d", (int)videoScaleFinalWidth, (int)videoScaleFinalHeight);
-
-				argv[0] = const_cast<char *>("ffmpeg");
-				argv[1] = const_cast<char *>("-i");
-				argv[2] = const_cast<char *>(tmpSrcFile.c_str());
-				argv[3] = const_cast<char *>("-vf");
-				argv[4] = const_cast<char *>(scaleArg);
-				argv[5] = const_cast<char *>(tmpDstFile.c_str());
-				argv[6] = NULL;
-
-				MESSAGE_DEBUG("", "", "video scaled down to " + scaleArg);
-			}
-			else
-			{
-
-				memset(add_overlay_and_blur, 0, sizeof(add_overlay_and_blur));
-				sprintf(add_overlay_and_blur, "split [original][copy]; [copy] crop=ih*9/16:ih:iw/2-ow/2:0, scale=%d:%d, gblur=sigma=20[blurred]; [original] scale=iw/ih*%d:%d [originalscaled]; [blurred][originalscaled]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2", (int)FEEDVIDEO_MAX_WIDTH, (int)FEEDVIDEO_MAX_HEIGHT, (int)FEEDVIDEO_MAX_HEIGHT, (int)FEEDVIDEO_MAX_HEIGHT);
-
-				argv[0] = const_cast<char *>("ffmpeg");
-				argv[1] = const_cast<char *>("-i");
-				argv[2] = const_cast<char *>(tmpSrcFile.c_str());
-				argv[3] = const_cast<char *>("-vf");
-				argv[4] = const_cast<char *>(add_overlay_and_blur);
-				argv[5] = const_cast<char *>(tmpDstFile.c_str());
-				argv[6] = NULL;
-
-				MESSAGE_DEBUG("", "", "video overlayed and blurred (" + add_overlay_and_blur + ")");
-			}
-*/
 		}
 		else
 		{
@@ -385,10 +337,7 @@ bool CVideoConverter::FirstPhase()
 			argv[3] = const_cast<char *>(tmpDstFile.c_str());
 			argv[4] = NULL;
 
-			{
-				CLog	log;
-				log.Write(DEBUG, "CVideoConverter::" + string(__func__) + "[" + to_string(__LINE__) + "]: video not found, probably music only");
-			}
+			MESSAGE_DEBUG("", "", "video not found, probably music only");
 		}
 
 
@@ -399,17 +348,12 @@ bool CVideoConverter::FirstPhase()
 		}
 		else
 		{
-			CLog	log;
-			log.Write(ERROR, "CVideoConverter::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: fail to convert " + GetTempFullFilename() + " -> " + GetPreFinalFullFilename(0));
+			MESSAGE_ERROR("", "", "fail to convert " + GetTempFullFilename() + " -> " + GetPreFinalFullFilename(0));
 		}
 	}
 	else
 	{
-
-		{
-			CLog	log;
-			log.Write(ERROR, "CVideoConverter::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: fail to extract metadata or video resolution");
-		}
+		MESSAGE_ERROR("", "", "fail to extract metadata or video resolution");
 	}
 
 	MESSAGE_DEBUG("", "", "finish (result = " + to_string(result));
@@ -445,8 +389,7 @@ bool CVideoConverter::SecondPhase()
 	}
 	else
 	{
-		CLog	log;
-		log.Write(ERROR, "CVideoConverter::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: fail to convert " + GetTempFullFilename() + " -> " + GetPreFinalFullFilename(0));
+		MESSAGE_ERROR("", "", "fail to convert " + GetTempFullFilename() + " -> " + GetPreFinalFullFilename(0));
 	}
 
 	MESSAGE_DEBUG("", "", "finish (result = " + to_string(result) + ")");
@@ -482,13 +425,11 @@ bool	CVideoConverter::VideoConvert(int dstIndex, char **argv)
 			ret = getpriority(PRIO_PROCESS, getpid());
 			if((ret > -20) and (ret < 19))
 			{
-				CLog	log;
-				log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) + "]: process priority lowered down to " + to_string(ret));
+				MESSAGE_DEBUG("", "", "process priority lowered down to " + to_string(ret));
 			}
 			else
 			{
-				CLog	log;
-				log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: getting process priority (errno = " + to_string(errno) + ")");
+				MESSAGE_ERROR("", "", "getting process priority (errno = " + to_string(errno) + ")");
 			}
 		}
 
@@ -501,8 +442,7 @@ bool	CVideoConverter::VideoConvert(int dstIndex, char **argv)
 		}
 		else
 		{
-			CLog	log;
-			log.Write(ERROR, "CVideoConverter::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: can't redirect stdout or stderr to files");
+			MESSAGE_ERROR("", "", "can't redirect stdout or stderr to files");
 		}
 
 		// --- child process will stop here
@@ -510,10 +450,8 @@ bool	CVideoConverter::VideoConvert(int dstIndex, char **argv)
 
 		// we get here just in case Input return false 
 		// при неудаче печатаем причину и завершаем порожденный процесс 
-		{
-			CLog	log;
-			log.Write(ERROR, "CVideoConverter::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: redirecting input: ", strerror(errno));
-		}
+		MESSAGE_ERROR("", "", "redirecting input: " + strerror(errno));
+
 		/* Мы не делаем free(firstfound),firstfound = NULL
 		* потому что данный процесс завершается (поэтому ВСЯ его
 		* память освобождается) :
@@ -531,7 +469,8 @@ bool	CVideoConverter::VideoConvert(int dstIndex, char **argv)
 		ostringstream   ost;
 
 		ost.str("");
-		while((pid = wait( &ws)) > 0 ){
+		while((pid = wait( &ws)) > 0 )
+		{
 			if( WIFEXITED(ws))
 			{
 				ost << "pid=" << pid << " died, code " << WEXITSTATUS(ws);
@@ -549,8 +488,7 @@ bool	CVideoConverter::VideoConvert(int dstIndex, char **argv)
 		}
 		if(!result)
 		{
-			CLog	log;
-			log.Write(ERROR, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: child process: ", ost.str());
+			MESSAGE_ERROR("", "", "child process: " + ost.str());
 		}
 	}
 
