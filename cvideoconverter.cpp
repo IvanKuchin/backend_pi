@@ -322,10 +322,12 @@ bool CVideoConverter::FirstPhase()
 			argv[0] = const_cast<char *>("ffmpeg");
 			argv[1] = const_cast<char *>("-i");
 			argv[2] = const_cast<char *>(tmpSrcFile.c_str());
-			argv[3] = const_cast<char *>("-vf");
-			argv[4] = const_cast<char *>(scaleArg);
-			argv[5] = const_cast<char *>(tmpDstFile.c_str());
-			argv[6] = NULL;
+			argv[3] = const_cast<char *>("-pix_fmt");
+			argv[4] = const_cast<char *>("yuv420p");
+			argv[5] = const_cast<char *>("-vf");
+			argv[6] = const_cast<char *>(scaleArg);
+			argv[7] = const_cast<char *>(tmpDstFile.c_str());
+			argv[8] = NULL;
 
 			MESSAGE_DEBUG("", "", "video scaled down to " + scaleArg);
 		}
@@ -334,8 +336,10 @@ bool CVideoConverter::FirstPhase()
 			argv[0] = const_cast<char *>("ffmpeg");
 			argv[1] = const_cast<char *>("-i");
 			argv[2] = const_cast<char *>(tmpSrcFile.c_str());
-			argv[3] = const_cast<char *>(tmpDstFile.c_str());
-			argv[4] = NULL;
+			argv[3] = const_cast<char *>("-pix_fmt");
+			argv[4] = const_cast<char *>("yuv420p");
+			argv[5] = const_cast<char *>(tmpDstFile.c_str());
+			argv[6] = NULL;
 
 			MESSAGE_DEBUG("", "", "video not found, probably music only");
 		}
