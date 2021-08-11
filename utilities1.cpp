@@ -291,8 +291,15 @@ string RemoveQuotas(string src)
 
 	while((pos = result.find("\"", pos)) != string::npos)
 	{
-		result.replace(pos, 1, "\\\"");
-		pos += 2;
+		if(pos && (result[pos - 1] == '\\'))
+		{
+			pos += 1;
+		}
+		else
+		{
+			result.replace(pos, 1, "\\\"");
+			pos += 2;
+		}
 	}
 
 	MESSAGE_DEBUG("", "", "finish (result = " + result + ")");
