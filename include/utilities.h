@@ -46,6 +46,8 @@ auto      		DeleteHTML(string src, bool removeBR = true)								-> string;
 auto      		RemoveQuotas(string src)													-> string;
 auto      		RemoveSpecialSymbols(wstring src)											-> wstring;
 auto      		RemoveSpecialSymbols(string src)											-> string;
+auto      		ReplaceAmpTagToCharacter(wstring src)										-> wstring;
+auto      		ReplaceAmpTagToCharacter(string src)										-> string;
 auto 			RemoveSpecialHTMLSymbols(const wstring &src)								-> wstring;
 auto      		RemoveSpecialHTMLSymbols(const string &src)									-> string;
 auto      		ReplaceDoubleQuoteToQuote(string src)										-> string;

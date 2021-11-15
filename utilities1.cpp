@@ -336,6 +336,30 @@ auto RemoveSpecialSymbols(string src) -> string
 }
 
 /*
+	Replace html ampersand to single char
+*/
+auto ReplaceAmpTagToCharacter(wstring src) -> wstring
+{
+	MESSAGE_DEBUG("", "", "start");
+
+	auto					result = src;
+	map<wstring, wstring>	map_replacement_1 = {
+		{L"&amp;", L"&"},
+	};
+
+	result = ReplaceWstringAccordingToMap(result, map_replacement_1);
+
+	MESSAGE_DEBUG("", "", "finish");
+
+	return result;
+}
+
+auto ReplaceAmpTagToCharacter(string src) -> string
+{
+	return(wide_to_multibyte(ReplaceAmpTagToCharacter(multibyte_to_wide(src))));
+}
+
+/*
 	Delete special symbols like \t \\ \<
 */
 auto RemoveSpecialHTMLSymbols(const wstring &src) -> wstring
