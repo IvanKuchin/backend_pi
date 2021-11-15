@@ -174,7 +174,9 @@ bool CHTML::ExtractEmbedVideoURL()
 {
 	MESSAGE_DEBUG("", "", "start");
 
-	embedVideoURL = GetAttributeValue("meta",  "property", "og:video:url", "content");
+	embedVideoURL = GetAttributeValue("meta",  "name", "og:video:url", "content");
+	if(embedVideoURL.empty())
+		embedVideoURL = GetAttributeValue("meta",  "property", "og:video:url", "content");
 
 	MESSAGE_DEBUG("", "", "finish (return: " + (!embedVideoURL.empty() ? "true" : "false") + ")");
 
@@ -187,7 +189,14 @@ bool CHTML::ExtractPreviewImage()
 
 	MESSAGE_DEBUG("", "", "start");
 
-	metaPreviewImageURL = GetAttributeValue("meta", "property", "og:image", "content");
+	metaPreviewImageURL = GetAttributeValue("meta", "name", "og:image", "content");
+	if(metaPreviewImageURL.empty())
+		metaPreviewImageURL = GetAttributeValue("meta", "property", "og:image", "content");
+
+	// --- if url inside tag contains ampersand character it will be present as html-tag
+	// --- to get proper URL we must replace tag with character
+	metaPreviewImageURL = ReplaceAmpTagToCharacter(metaPreviewImageURL);
+
 	result = !metaPreviewImageURL.empty();
 
 	MESSAGE_DEBUG("", "", "finish (return: " + (result ? "true" : "false") + ")");
