@@ -121,7 +121,9 @@ class CLog
 				    																// --- string() copies memory content to local stack therefore it could be reused later.
 
 				    setlocale(LC_ALL, LOCALE_ENGLISH.c_str());
-			    	strftime(localtimeBuffer, 80 - 1, "%b %d %T", timeInfo);
+				    // --- do NOT change time format !!!
+				    // --- fluent-bit parses it as a timestamp regexp
+			    	strftime(localtimeBuffer, 80 - 1, "%b %d %Y %T", timeInfo);
 				    setlocale(LC_ALL, curr_locale.c_str());
 
 			    	if(msCount.length() > 6) msCount = msCount.substr(msCount.length() - 6, 6);
@@ -130,7 +132,7 @@ class CLog
 			    }
 
 			    // --- do NOT change log format !!!
-			    // --- logmessages parsed by fluent-bit_app-log_parser with regular expression
+			    // --- logmessages parsed by fluent-bit_app-log_parser with regexp
 				fs << "[" << processID << "] " << SpellLogLevel(level) << ": " << mess << endl;
 
 			    fs.close();
