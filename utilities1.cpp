@@ -260,10 +260,7 @@ string DeleteHTML(string src, bool removeBR /* = true*/)
 				}
 				else
 				{
-					{
-						CLog	log;
-						log.Write(DEBUG, string(__func__) + "(" + src + ")" + "[" + to_string(__LINE__) + "]: keep <br> at pos: " + to_string(firstPos));
-					}
+					MESSAGE_DEBUG("", "", "keep <br> at pos: " + to_string(firstPos))
 				}
 			}
 
@@ -698,14 +695,7 @@ double GetSecondsSinceY2k()
 	// seconds = difftime(timer,mktime(&y2k));
 	seconds = timer - secondsY2kUTC;
 
-	{
-		CLog	log;
-		ostringstream	ost;
-
-		ost.str("");
-		ost << "GetSecondsSinceY2k(): end (seconds since Y2k" << std::to_string(seconds) << ")";
-		log.Write(DEBUG, ost.str());
-	}
+	MESSAGE_DEBUG("", "", "finish (seconds since Y2k" + to_string(seconds) + ")");
 
 	return seconds;
 }
@@ -728,15 +718,7 @@ string GetLocalFormattedTimestamp()
 	strftime(buffer,80,"%Y-%m-%02d %T", local_tm);
 	result = buffer;
 
-
-	{
-		CLog	log;
-		ostringstream	ost;
-
-		ost.str("");
-		ost << "GetLocalFormatedTimestamp(): end (" << result << ")";
-		log.Write(DEBUG, ost.str());
-	}
+	MESSAGE_DEBUG("", "", "finish (" + result + ")");
 
 	return result;
 
@@ -746,42 +728,19 @@ string GetLocalFormattedTimestamp()
 // --- return: number of second difference from now
 double GetTimeDifferenceFromNow(const string timeAgo)
 {
+	MESSAGE_DEBUG("", "", "start (" + timeAgo + ")");
+
 	time_t	  now_t, checked_t;
 	// char		utc_str[100];
 	struct tm   *local_tm, check_tm;
-	ostringstream	ost;
-/*
-	{
-		CLog	log;
-		ostringstream	ost;
-
-		ost.str("");
-		ost << "GetTimeDifferenceFromNow(" << timeAgo << "): start";
-		log.Write(DEBUG, ost.str());
-	}
-*/
+	double		result = 0;
 
 	now_t = time(NULL);
 	local_tm = localtime(&now_t);
 	if(local_tm == NULL)
 	{
-		CLog	log;
-		ostringstream	ost;
-
-		ost.str("");
-		ost << "GetTimeDifferenceFromNow(now): ERROR in running localtime(&t)";
-		log.Write(ERROR, ost.str());
+		MESSAGE_ERROR("", "", "localtime(&t) failed");
 	}
-/*
-	{
-		CLog	log;
-		ostringstream	ost;
-
-		ost.str("");
-		ost << "GetTimeDifferenceFromNow(now): now_t = " << now_t;
-		log.Write(DEBUG, ost.str());
-	}
-*/
 
 	// now2_t = time(NULL);
 	// check_tm = localtime(&now2_t);
@@ -796,44 +755,12 @@ double GetTimeDifferenceFromNow(const string timeAgo)
 	// --- Test starts on 9/11. If there is no side effect, comment-out previous line.
 	if(local_tm) check_tm.tm_isdst = local_tm->tm_isdst;	// --- "Summer time" is the same as local clock.
 
-/*
-	{
-		CLog	log;
-		ostringstream	ost;
-
-		ost.str("");
-		ost << "GetTimeDifferenceFromNow(" << timeAgo << "): checked year = " << check_tm.tm_year << " checked month = " << check_tm.tm_mon << " checked day = " << check_tm.tm_mday << " checked hour = " << check_tm.tm_hour << " checked min = " << check_tm.tm_min << " checked sec = " << check_tm.tm_sec;
-		log.Write(DEBUG, ost.str());
-	}
-*/
 	checked_t = mktime(&check_tm);
 
-	{
-		CLog	log;
-		ostringstream	ost;
-		char	buffer[80];   /* Flawfinder: ignore */
+	result = difftime(now_t, checked_t);
+	MESSAGE_DEBUG("", "", "finish (" + to_string(result) + ")");
 
-		ost.str("");
-		strftime(buffer,80,"check_tm: date regenerated: %02d-%b-%Y %T %Z  %I:%M%p.", &check_tm);
-		ost << "GetTimeDifferenceFromNow(" << timeAgo << "): " << buffer << "";
-		log.Write(DEBUG, ost.str());
-
-		memset(buffer, 0, 80);
-		strftime(buffer,80,"local_tm: date regenerated: %02d-%b-%Y %T %Z  %I:%M%p.", local_tm);
-		ost.str("");
-		ost << "GetTimeDifferenceFromNow(" << timeAgo << "): " << buffer << "";
-		log.Write(DEBUG, ost.str());
-
-		ost.str("");
-		ost << "GetTimeDifferenceFromNow(" << timeAgo << "): difftime( now_t=" << now_t << ", checked_t=" << checked_t << ")";
-		log.Write(DEBUG, ost.str());
-
-		ost.str("");
-		ost << "GetTimeDifferenceFromNow(" << timeAgo << "): end (difference = " << difftime(now_t, checked_t) << ")";
-		log.Write(DEBUG, ost.str());
-	}
-
-	return difftime(now_t, checked_t);
+	return result;
 }
 
 string GetMinutesDeclension(const int value)
@@ -959,18 +886,6 @@ string GetHumanReadableTimeDifferenceFromNow (const string timeAgo)
 
 	ost << " назад.";
 
-
-	// --- commented to reduce logs flooding
-	{
-		CLog	log;
-		ostringstream	ost1;
-
-		ost1.str("");
-		ost1 << "string GetHumanReadableTimeDifferenceFromNow (" << timeAgo << "): sec difference (" << seconds << ") human format (" << ost.str() << ")" ;
-		log.Write(DEBUG, ost1.str());
-	}
-
-
 	return ost.str();
 }
 
@@ -1067,35 +982,29 @@ string UniqueUserIDInUserIDLine(string userIDLine) //-> decltype(static_cast<str
 
 bool	isFilenameImage(const string &filename)
 {
+	MESSAGE_DEBUG("", "", "start (" + filename + ")");
+
 	auto	result = false;
 	regex   e1("[.](gif|jpg|jpeg|png)$", regex_constants::icase);
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "(" + filename + ")[" + to_string(__LINE__) + string("]: start" ));
-	}
 
 	result = regex_search(filename, e1);
 
-	{
-		MESSAGE_DEBUG("", "", "finish (result: " + (result ? "true" : "false") + ")");
-	}
+	MESSAGE_DEBUG("", "", "finish (result: " + (result ? "true" : "false") + ")");
+
 	return  result;
 }
 
 bool	isFilenameVideo(const string &filename)
 {
+	MESSAGE_DEBUG("", "", "start (" + filename + ")");
+
 	auto	result = false;
 	regex   e1("[.](mov|avi|mp4|webm)$", regex_constants::icase);
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "(" + filename + ")[" + to_string(__LINE__) + string("]: start" ));
-	}
 
 	result = regex_search(filename, e1);
 
-	{
-		MESSAGE_DEBUG("", "", "finish (result: " + (result ? "true" : "false") + ")");
-	}
+	MESSAGE_DEBUG("", "", "finish (result: " + (result ? "true" : "false") + ")");
+
 	return  result;
 }
 
@@ -1146,10 +1055,7 @@ vector<string> GetUserTagsFromText(string srcMessage)
 		++rItr;
 	}
 
-	{
-		CLog	log;
-		log.Write(DEBUG, __func__ + string("[") + to_string(__LINE__) + string("]: end (result length: ") + to_string(result.size()) + string(")"));
-	}
+	MESSAGE_DEBUG("", "", "finish (result lenght: " + to_string(result.size()) + ")")
 
 	return result;
 }
@@ -1195,8 +1101,7 @@ string GetGeoLocalityIDByCityAndRegion(string regionName, string cityName, CMysq
 				regionID = to_string(tmp);
 			else
 			{
-				CLog			log;
-				log.Write(ERROR, string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: insert into geo_region_db");
+				MESSAGE_ERROR("", "", "insert into DB");
 			}
 		}
 	}
@@ -1222,8 +1127,7 @@ string GetGeoLocalityIDByCityAndRegion(string regionName, string cityName, CMysq
 				cityID = to_string(tmp);
 			else
 			{
-				CLog			log;
-				log.Write(ERROR, string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: insert into geo_region_db");
+				MESSAGE_ERROR("", "", "insert into DB");
 			}
 		}
 		result = cityID;
@@ -1362,6 +1266,8 @@ auto CopyFile(const string &src, const string &dst) -> string
 // --- admin function
 string GetCompanyDuplicates(CMysql *db)
 {
+	MESSAGE_DEBUG("", "", "start");
+
 	// --- map<companyName, companyID>
 	map<string, string>		companyMap;
 
@@ -1369,19 +1275,8 @@ string GetCompanyDuplicates(CMysql *db)
 	map<string, string>		duplicatesMap;
 	ostringstream			ost, ostResult;
 
-	{
-		CLog	log;
-		ostringstream	ostTemp;
-
-		ostTemp.str("");
-		ostTemp << "GetCompanyDuplicates: start ";
-		log.Write(DEBUG, ostTemp.str());
-	}
-
 	ostResult.str("");
-	ost.str("");
-	ost << "select * from `company`;";
-	for(auto i = 0; i < db->Query(ost.str()); i++)
+	for(auto i = 0; i < db->Query("select * from `company`;"); i++)
 	{
 		string		companyToTestName, companyToTestID;
 
@@ -1401,25 +1296,14 @@ string GetCompanyDuplicates(CMysql *db)
 	for (const auto& it : duplicatesMap)
 	{
 		if(ostResult.str().length()) ostResult << ",";
-		ost.str("");
-		ost << "select * from `company` where `id`='" << it.first << "';";
-		db->Query(ost.str());
+		db->Query("select * from `company` where `id`='" + it.first + "';");
 		ostResult << "{\"id\":\"" << it.first << "\", \"companyName\":\"" << db->Get(0, "name") << "\"";
 
-		ost.str("");
-		ost << "select count(*) as `number_of_users` from `users_company` where `company_id`='" << it.first << "';";
-		db->Query(ost.str());
+		db->Query("select count(*) as `number_of_users` from `users_company` where `company_id`='" + it.first + "';");
 		ostResult << ", \"usersInCompany\":\"" << db->Get(0, "number_of_users") << "\"}";
 	}
 
-	{
-		CLog	log;
-		ostringstream	ostTemp;
-
-		ostTemp.str("");
-		ostTemp << "GetCompanyDuplicates: end (number of duplicates: " << duplicatesMap.size() << ")";
-		log.Write(DEBUG, ostTemp.str());
-	}
+	MESSAGE_DEBUG("", "", "finish (number of duplicates: " + to_string(duplicatesMap.size()) + ")");
 
 	return ostResult.str();
 }
@@ -1427,36 +1311,19 @@ string GetCompanyDuplicates(CMysql *db)
 // --- admin function
 string GetPicturesWithEmptySet(CMysql *db)
 {
-	ostringstream		   ost, ostResult;
-	int					 affected;
+	MESSAGE_DEBUG("", "", "start");
 
-	{
-		CLog	log;
-		ostringstream   ostTemp;
-
-		ostTemp.str("");
-		ostTemp << "GetPicturesWithEmptySet: start ";
-		log.Write(DEBUG, ostTemp.str());
-	}
+	ostringstream		ost, ostResult;
+	auto				affected = db->Query("SELECT * FROM `feed_images` where `setID`='0';");
 
 	ostResult.str("");
-	ost.str("");
-	ost << "SELECT * FROM `feed_images` where `setID`='0';";
-	affected = db->Query(ost.str());
 	for(auto i = 0; i < affected; i++)
 	{
 		if(ostResult.str().length()) ostResult << ",";
 		ostResult << "{\"id\":\"" << db->Get(i, "id") << "\",\"srcType\":\"" << db->Get(i, "srcType") << "\",\"userID\":\"" << db->Get(i, "userID") << "\",\"folder\":\"" << db->Get(i, "folder") << "\",\"filename\":\"" << db->Get(i, "filename") << "\"}";
 	}
 
-	{
-		CLog	log;
-		ostringstream   ostTemp;
-
-		ostTemp.str("");
-		ostTemp << "GetPicturesWithEmptySet: end (# of lost pictures: " << affected << ")";
-		log.Write(DEBUG, ostTemp.str());
-	}
+	MESSAGE_DEBUG("", "", "finish (# of lost pictures: " + to_string(affected) + ")");
 
 	return ostResult.str();
 }
@@ -1464,24 +1331,15 @@ string GetPicturesWithEmptySet(CMysql *db)
 // --- admin function
 string GetPicturesWithUnknownMessage(CMysql *db)
 {
-	ostringstream					   ost, ostResult;
-	int								 affected, lostCount = 0;
-	unordered_set<unsigned long>		allImageSets;
-	unordered_set<unsigned long>		lostImageSets;
+	MESSAGE_DEBUG("", "", "start");
 
-	{
-		CLog	log;
-		ostringstream   ostTemp;
-
-		ostTemp.str("");
-		ostTemp << "GetPicturesWithUnknownMessage: start ";
-		log.Write(DEBUG, ostTemp.str());
-	}
+	ostringstream					ost, ostResult;
+	unordered_set<unsigned long>	allImageSets;
+	unordered_set<unsigned long>	lostImageSets;
+	auto							lostCount = 0;
+	auto							affected = db->Query("SELECT `setID` FROM `feed_images`;");
 
 	ostResult.str("");
-	ost.str("");
-	ost << "SELECT `setID` FROM `feed_images`;";
-	affected = db->Query(ost.str());
 	for(auto i = 0; i < affected; i++)
 	{
 		allImageSets.insert(stol(db->Get(i, "setID")));
@@ -1489,35 +1347,23 @@ string GetPicturesWithUnknownMessage(CMysql *db)
 
 	for(const unsigned long& id: allImageSets)
 	{
-		ost.str("");
-		ost << "select count(*) as count from `feed_message` where `imageSetID`=\"" << id << "\";";
-		db->Query(ost.str());
-		if(!stoi(db->Get(0, "count")))
-		{
+		auto count_of_messages_with_this_image_set = GetValueFromDB("select count(*) as count from `feed_message` where `imageSetID`=\"" + to_string(id) + "\";", db);
+
+		if(stol(count_of_messages_with_this_image_set) == 0)
 			lostImageSets.insert(id);
-		}
 	}
 
 	ostResult.str("");
 	for(const unsigned long& id: lostImageSets)
 	{
-		ost.str("");
-		ost << "select * from `feed_images` where `setID`=\"" << id << "\";";
-		for(auto i = 0; i < db->Query(ost.str()); i++, lostCount++)
+		for(auto i = 0; i < db->Query("select * from `feed_images` where `setID`=\"" + to_string(id) + "\";"); i++, lostCount++)
 		{
 			if(ostResult.str().length()) ostResult << ",";
 			ostResult << "{\"id\":\"" << db->Get(i, "id") << "\",\"srcType\":\"" << db->Get(i, "srcType") << "\",\"userID\":\"" << db->Get(i, "userID") << "\",\"setID\":\"" << db->Get(i, "setID") << "\",\"folder\":\"" << db->Get(i, "folder") << "\",\"filename\":\"" << db->Get(i, "filename") << "\"}";
 		}
 	}
 
-	{
-		CLog	log;
-		ostringstream   ostTemp;
-
-		ostTemp.str("");
-		ostTemp << "GetPicturesWithUnknownMessage: end (# of lost pictures: " << affected << ")";
-		log.Write(DEBUG, ostTemp.str());
-	}
+	MESSAGE_DEBUG("", "", "finish (# of lost image sets: " + to_string(lostImageSets.size()) + ")")
 
 	return ostResult.str();
 }
@@ -1525,24 +1371,15 @@ string GetPicturesWithUnknownMessage(CMysql *db)
 // --- admin function
 string GetPicturesWithUnknownUser(CMysql *db)
 {
+	MESSAGE_DEBUG("", "", "start");
+
 	ostringstream					   		ost, ostResult;
-	int								 		affected, lostCount = 0;
+	auto							 		affected = db->Query("SELECT `srcType`,`userID` FROM `feed_images`;");
+	auto									lostCount = 0;
 	unordered_set<string>					allImageOwners;
 	unordered_set<unsigned long>			lostImages;
 
-	{
-		CLog	log;
-		ostringstream   ostTemp;
-
-		ostTemp.str("");
-		ostTemp << "GetPicturesWithUnknownUser: start ";
-		log.Write(DEBUG, ostTemp.str());
-	}
-
 	ostResult.str("");
-	ost.str("");
-	ost << "SELECT `srcType`,`userID` FROM `feed_images`;";
-	affected = db->Query(ost.str());
 	for(auto i = 0; i < affected; i++)
 		allImageOwners.insert(string(db->Get(i, "srcType")) + string(db->Get(i, "userID")));
 
@@ -1570,23 +1407,14 @@ string GetPicturesWithUnknownUser(CMysql *db)
 	ostResult.str("");
 	for(const unsigned long& id: lostImages)
 	{
-		ost.str("");
-		ost << "select * from `feed_images` where `userID`=\"" << id << "\";";
-		for(auto i = 0; i < db->Query(ost.str()); i++, lostCount++)
+		for(auto i = 0; i < db->Query("select * from `feed_images` where `userID`=\"" + to_string(id) + "\";"); i++, lostCount++)
 		{
 			if(ostResult.str().length()) ostResult << ",";
 			ostResult << "{\"id\":\"" << db->Get(i, "id") << "\",\"srcType\":\"" << db->Get(i, "srcType") << "\",\"userID\":\"" << db->Get(i, "userID") << "\",\"setID\":\"" << db->Get(i, "setID") << "\",\"folder\":\"" << db->Get(i, "folder") << "\",\"filename\":\"" << db->Get(i, "filename") << "\"}";
 		}
 	}
 
-	{
-		CLog	log;
-		ostringstream   ostTemp;
-
-		ostTemp.str("");
-		ostTemp << "GetPicturesWithUnknownUser: end (# of lost pictures: " << affected << ")";
-		log.Write(DEBUG, ostTemp.str());
-	}
+	MESSAGE_DEBUG("", "", "finish");
 
 	return ostResult.str();
 }
@@ -1594,14 +1422,11 @@ string GetPicturesWithUnknownUser(CMysql *db)
 // --- admin function
 string GetRecommendationAdverse(CMysql *db)
 {
-	ostringstream					   ost, ostResult, dictionaryStatement;
-	int								 affected;
+	ostringstream		ost, ostResult, dictionaryStatement;
+	auto				affected = db->Query("SELECT * FROM `dictionary_adverse`;");;
 
 	dictionaryStatement.str("");
 	ostResult.str("");
-	ost.str("");
-	ost << "SELECT * FROM `dictionary_adverse`;";
-	affected = db->Query(ost.str());
 	if(affected)
 	{
 		for(auto i = 0; i < affected; i++)
@@ -1609,26 +1434,29 @@ string GetRecommendationAdverse(CMysql *db)
 			if(i) dictionaryStatement << " or ";
 			dictionaryStatement << "(`title` like \"%" << db->Get(i, "word") << "%\")";
 		}
-	}
 
-	ost.str("");
-	ost << "select * from `users_recommendation` where `state` = 'unknown' and (" << dictionaryStatement.str() << ");";
-	affected = db->Query(ost.str());
-	if(affected)
-	{
-		for(auto i = 0; i < affected; i++)
+		affected = db->Query("select * from `users_recommendation` where `state` = 'unknown' and (" + dictionaryStatement.str() + ");");
+		if(affected)
 		{
-			if(i) ostResult << ",";
-			ostResult << "{";
-			ostResult << "\"recommendationId\":\"" << db->Get(i, "id") <<"\",";
-			ostResult << "\"recommendationRecommended_userID\":\"" << db->Get(i, "recommended_userID") <<"\",";
-			ostResult << "\"recommendationRecommending_userID\":\"" << db->Get(i, "recommending_userID") <<"\",";
-			ostResult << "\"recommendationTitle\":\"" << db->Get(i, "title") <<"\",";
-			ostResult << "\"recommendationEventTimestamp\":\"" << db->Get(i, "eventTimestamp") <<"\",";
-			ostResult << "\"recommendationState\":\"" << db->Get(i, "state") <<"\"";
-			ostResult << "}";
+			for(auto i = 0; i < affected; i++)
+			{
+				if(i) ostResult << ",";
+				ostResult << "{";
+				ostResult << "\"recommendationId\":\"" << db->Get(i, "id") <<"\",";
+				ostResult << "\"recommendationRecommended_userID\":\"" << db->Get(i, "recommended_userID") <<"\",";
+				ostResult << "\"recommendationRecommending_userID\":\"" << db->Get(i, "recommending_userID") <<"\",";
+				ostResult << "\"recommendationTitle\":\"" << db->Get(i, "title") <<"\",";
+				ostResult << "\"recommendationEventTimestamp\":\"" << db->Get(i, "eventTimestamp") <<"\",";
+				ostResult << "\"recommendationState\":\"" << db->Get(i, "state") <<"\"";
+				ostResult << "}";
+			}
 		}
 	}
+	else
+	{
+		MESSAGE_DEBUG("", "", "table is empty");
+	}
+
 
 	return ostResult.str();
 }
@@ -1639,9 +1467,7 @@ string GetUserAvatarByUserID(string userID, CMysql *db)
 	ostringstream   ost;
 	string		  userAvatar = "";
 
-	ost.str("");
-	ost << "select * from `users_avatars` where `userid`='" << userID << "' and `isActive`='1';";
-	if(db->Query(ost.str()))
+	if(db->Query("select * from `users_avatars` where `userid`='" + userID + "' and `isActive`='1';"))
 	{
 		ost.str("");
 		ost << "/images/avatars/avatars" << db->Get(0, "folder") << "/" << db->Get(0, "filename");
@@ -1709,17 +1535,12 @@ void	RemoveMessageImages(const string &sqlWhereStatement, CMysql *db)
 // --- 2) db reference
 void	RemoveBookCover(string sqlWhereStatement, c_config *config, CMysql *db)
 {
+	MESSAGE_DEBUG("", "", "start (" + sqlWhereStatement + ")")
+
 	int			 affected;
 	ostringstream   ost;
 
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: start (sqlWhereStatement: " + sqlWhereStatement + ")");
-	}
-
-	ost.str("");
-	ost << "select * from `book` where " << sqlWhereStatement;
-	affected = db->Query(ost.str());
+	affected = db->Query("select * from `book` where " + sqlWhereStatement);
 	if(affected)
 	{
 		for(auto i = 0; i < affected; i++)
@@ -1736,10 +1557,7 @@ void	RemoveBookCover(string sqlWhereStatement, c_config *config, CMysql *db)
 				filename +=  "/";
 				filename +=  db->Get(i, "coverPhotoFilename");
 
-				{
-					CLog	log;
-					log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: file must be deleted [" + filename + "]");
-				}
+				MESSAGE_DEBUG("", "", "file must be deleted [" + filename + "]");
 
 				if(isFileExists(filename))
 				{
@@ -1747,30 +1565,21 @@ void	RemoveBookCover(string sqlWhereStatement, c_config *config, CMysql *db)
 				}
 				else
 				{
-					CLog	log;
-					log.Write(ERROR, string(__func__) + "[" + to_string(__LINE__) +  "]:ERROR: file doesn't exists  [filename=" + filename + "]");
+					MESSAGE_ERROR("", "", "file isn't exists [filename=" + filename + "]")
 				}
 			}
 			else
 			{
-				{
-					CLog	log;
-					log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: mediaType[" + mediaType + "] doesn't have local file");
-				}
-
+				MESSAGE_DEBUG("", "", "mediaType[" + mediaType + "] doesn't have local file");
 			}
 
 		}
 		// --- cleanup DB with images pre-populated for posted message
-		ost.str("");
-		ost << "UPDATE `book` SET `coverPhotoFolder`=\"\",`coverPhotoFilename`=\"\" where " << sqlWhereStatement;
-		db->Query(ost.str());
+		db->Query("UPDATE `book` SET `coverPhotoFolder`=\"\",`coverPhotoFilename`=\"\" where " + sqlWhereStatement);
 	}
 
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: finish");
-	}
+
+	MESSAGE_DEBUG("", "", "finish");
 }
 
 // --- function removes specified image from FileSystems and cleanup DB
@@ -1780,13 +1589,10 @@ void	RemoveBookCover(string sqlWhereStatement, c_config *config, CMysql *db)
 // --- 3) db reference
 bool	RemoveSpecifiedCover(string itemID, string itemType, c_config *config, CMysql *db)
 {
-	int			 affected;
-	bool			result = true;
+	MESSAGE_DEBUG("", "", "start (itemID = " + itemID + ", itemType = " + itemType + ")")
 
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: start (itemID = " + itemID + ", itemType = " + itemType + ")");
-	}
+	auto	affected = 0;
+	auto	result = true;
 
 	// --- scoping
 	{
@@ -1814,10 +1620,7 @@ bool	RemoveSpecifiedCover(string itemID, string itemType, c_config *config, CMys
 				filename +=  "/";
 				filename +=  db->Get(i, config->GetFromFile("db_field_name_photo_filename", itemType));
 
-				{
-					CLog	log;
-					log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: file must be deleted [" + filename + "]");
-				}
+				MESSAGE_DEBUG("", "", "file must be deleted [" + filename + "]");
 
 				if(isFileExists(filename))
 				{
@@ -1826,19 +1629,12 @@ bool	RemoveSpecifiedCover(string itemID, string itemType, c_config *config, CMys
 				else
 				{
 					result = false;
-					{
-						CLog	log;
-						log.Write(ERROR, string(__func__) + "[" + to_string(__LINE__) +  "]:ERROR: file doesn't exists  [filename=" + filename + "]");
-					}
+					MESSAGE_ERROR("", "", "file isn't exists  [filename=" + filename + "]");
 				}
 			}
 			else
 			{
-				{
-					CLog	log;
-					log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: mediaType[" + mediaType + "] doesn't have local file");
-				}
-
+				MESSAGE_DEBUG("", "", "mediaType[" + mediaType + "] doesn't have local file");
 			}
 
 		}
@@ -1854,10 +1650,7 @@ bool	RemoveSpecifiedCover(string itemID, string itemType, c_config *config, CMys
 		}
 	}
 
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) +  "]: finish (result = " + (result ? "true" : "false") + ")");
-	}
+	MESSAGE_DEBUG("", "", "finish (result = " + (result ? "true" : "false") + ")");
 
 	return result;
 }
@@ -1960,10 +1753,8 @@ bool RedirStdoutToFile(string fname)
 	if(!fRes)
 	{
 		result = false;
-		{
-			CLog	log;
-			log.Write(ERROR, string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: redirect stderr to " + fname);
-		}
+
+		MESSAGE_ERROR("", "", "redirect stderr to " + fname);
 	}
 
 	return  result;
@@ -1978,10 +1769,8 @@ bool RedirStderrToFile(string fname)
 	if(!fRes)
 	{
 		result = false;
-		{
-			CLog	log;
-			log.Write(ERROR, string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: redirect stderr to " + fname);
-		}
+
+		MESSAGE_ERROR("", "", "redirect stderr to " + fname);
 	}
 
 	return  result;

@@ -152,46 +152,28 @@ bool CMail::SendSMTP()
 	alarm(0);
 
 	data = SocketReceive(sock);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": >", data);
-	}
+	MESSAGE_DEBUG("", "", " >" + data);
 
 	data = "HELO me\n";
 	SocketSend(sock, data);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": <", data);
-	}
+	MESSAGE_DEBUG("", "", " <" + data);
 
 	data = SocketReceive(sock);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": >", data);
-	}
+	MESSAGE_DEBUG("", "", " >" + data);
 
 	data = "MAIL FROM: <";
 	data += mailfrom;
 	data += ">\n";
 	SocketSend(sock, data);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": <", data);
-	}
+	MESSAGE_DEBUG("", "", " <" + data);
 
 	data = SocketReceive(sock);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": >", data);
-	}
+	MESSAGE_DEBUG("", "", " >" + data);
 
 	if((data.find("ok") == string::npos) && (data.find("Ok") == string::npos) && (data.find("OK") == string::npos))
 	{
-		CLog		log;
-		ostringstream	ost;
+		MESSAGE_ERROR("", "", "wrong sender " + mailfrom);
 
-		ost << "CMail::" << __func__ << "[" << __LINE__ << "]:ERROR: sender " << mailfrom << " wrong";
-		log.Write(ERROR, ost.str());
 		return false;
 	}
 
@@ -199,40 +181,25 @@ bool CMail::SendSMTP()
 	data += rcptto;
 	data += ">\n";
 	SocketSend(sock, data);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": <", data);
-	}
+	MESSAGE_DEBUG("", "", " <" + data);
 
 	data = SocketReceive(sock);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": >", data);
-	}
+	MESSAGE_DEBUG("", "", " >" + data);
 
 	if((data.find("ok") == string::npos) && (data.find("Ok") == string::npos) && (data.find("OK") == string::npos))
 	{
-		CLog		log;
-		ostringstream	ost;
+		MESSAGE_ERROR("", "", "wrong recipient " + rcptto);
 
-		ost << "CMail::" << __func__ << "[" << __LINE__ << "]:ERROR: recipient " << rcptto << " wrong";
-		log.Write(ERROR, ost.str());
 		return false;
 	}
 
 
 	data = "DATA\n";
 	SocketSend(sock, data);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": <", data);
-	}
+	MESSAGE_DEBUG("", "", " <" + data);
 
 	data = SocketReceive(sock);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": >", data);
-	}
+	MESSAGE_DEBUG("", "", " >" + data);
 
 
 	data = "subject: ";
@@ -241,30 +208,18 @@ bool CMail::SendSMTP()
 	data += message;
 	data += "\n.\n";
 	SocketSend(sock, data);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": <", data);
-	}
+	MESSAGE_DEBUG("", "", " <" + data);
 
 	data = SocketReceive(sock);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": >", data);
-	}
+	MESSAGE_DEBUG("", "", " >" + data);
 
 	data = "QUIT\n";
 	SocketSend(sock, data);
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": <", data);
-	}
+	MESSAGE_DEBUG("", "", " <" + data);
 
 	close(sock);
 
-	{
-		CLog	log;
-		log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + ": end");
-	}
+	MESSAGE_DEBUG("", "", " end");
 
 	return true;
 }
@@ -358,8 +313,8 @@ int CMail::SendMailExec(const char *progr, char **av, int inp)
 
 			/* getpid() выдает номер (идентификатор) данного процесса */
 			pid = getpid();
-			ost <<  "CMail::" << __func__ << "[" << __LINE__ << "]: child process: pid=" << pid << " run";
-			log.Write(DEBUG, ost.str());
+
+			MESSAGE_DEBUG("", "", "child process: pid=" + to_string(pid) + " run");
 		}
 		/* Перенаправить ввод-вывод */
 		if(Input( inp ))
@@ -374,10 +329,8 @@ int CMail::SendMailExec(const char *progr, char **av, int inp)
 
 		// we get here just in case Input return false 
 		// при неудаче печатаем причину и завершаем порожденный процесс 
-		{
-			CLog	log;
-			log.Write(ERROR, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: redirecting input: ", strerror(errno));
-		}
+		MESSAGE_ERROR("", "", "redirecting input: " + strerror(errno));
+
 		/* Мы не делаем free(firstfound),firstfound = NULL
 		* потому что данный процесс завершается (поэтому ВСЯ его
 		* память освобождается) :
@@ -411,10 +364,8 @@ int CMail::SendMailExec(const char *progr, char **av, int inp)
 				ost << "pid=" << pid << " stopped signal " << WSTOPSIG(ws);
 			}
 		}
-		{
-			CLog	log;
-			log.Write(DEBUG, "CMail::" + string(__func__) + "[" + to_string(__LINE__) + "]: child process: ", ost.str());
-		}
+
+		MESSAGE_DEBUG("", "", "child process: " + ost.str());
 	}
 
 	/* восстановить реакции на сигналы от клавиатуры */
@@ -550,8 +501,8 @@ string CMailLocal::SetTemplateFile(string fileName)
     templateFile = fopen(fileName.c_str(), "r");   /* Flawfinder: ignore */
     if(!templateFile)
     {
-		CLog log;
-		log.Write(ERROR, string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: can't open file", fileName);
+		MESSAGE_ERROR("", "", "can't open file" + fileName);
+
 		templateFile = NULL;
 
 		throw CExceptionHTML("mail template");

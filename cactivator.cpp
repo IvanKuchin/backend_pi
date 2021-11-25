@@ -14,30 +14,26 @@ void CActivator::Save()
 {
 	if(!db)
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: connect to database in CActivator module");
+		MESSAGE_ERROR("", "", "connect to database in CActivator module");
 
 		throw CExceptionHTML("error db");
 	}
 
 	if(GetUser().empty())
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: user name must be set in activator");
+		MESSAGE_ERROR("", "", "user name must be set in activator");
 
 		throw CExceptionHTML("activator error");
 	}
 	if(GetID().empty())
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: id must be set in activator");
+		MESSAGE_ERROR("", "", "id must be set in activator");
 
 		throw CExceptionHTML("activator error");
 	}
 	if(GetType().empty())
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: type must be set in activator");
+		MESSAGE_ERROR("", "", "type must be set in activator");
 
 		throw CExceptionHTML("activator error");
 	}
@@ -49,24 +45,20 @@ bool CActivator::Load(string id)
 {
 	if(!db)
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: connect to database in CActivator module");
+		MESSAGE_ERROR("", "", "connect to database in CActivator module");
 
 		throw CExceptionHTML("error db");
 	}
 	if(id.empty())
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: id must be set in activator");
+		MESSAGE_ERROR("", "", "id must be set in activator");
 
 		throw CExceptionHTML("activator error");
 	}
 
 	if(db->Query("SELECT * FROM `activators` WHERE `id`=\"" + id + "\";") == 0)
 	{
-		CLog	log;
-
-		log.Write(DEBUG, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]: there is no such activator");
+		MESSAGE_DEBUG("", "", "there is no such activator");
 
 		return false;
 	}
@@ -84,15 +76,13 @@ void CActivator::Delete(string id)
 
 	if(!db)
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: connect to database in CActivator module");
+		MESSAGE_ERROR("", "", "connect to database in CActivator module");
 
 		throw CExceptionHTML("error db");
 	}
 	if(id.empty())
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: id must be set in activator");
+		MESSAGE_ERROR("", "", "id must be set in activator");
 
 		throw CExceptionHTML("activator error");
 	}
@@ -104,15 +94,13 @@ void CActivator::DeleteByUser(string userToDelete)
 {
 	if(!db)
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: error connect to database in CActivator module");
+		MESSAGE_ERROR("", "", "error connect to database in CActivator module");
 
 		throw CExceptionHTML("error db");
 	}
 	if(userToDelete.empty())
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: userToDelete must be set in activator");
+		MESSAGE_ERROR("", "", "userToDelete must be set in activator");
 
 		throw CExceptionHTML("activator error");
 	}
@@ -127,16 +115,14 @@ void CActivator::Activate()
 
 	if(GetID().empty())
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: Activator ID is empty while trying activate event");
+		MESSAGE_ERROR("", "", "Activator ID is empty while trying activate event");
 
 		throw CExceptionHTML("no activator");
 	}
 
 	if(db == NULL)
 	{
-		CLog	log;
-		log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: error connect DB in CActivator module");
+		MESSAGE_ERROR("", "", "error connect DB in CActivator module");
 
 		throw CExceptionHTML("error db");
 	}
@@ -152,16 +138,13 @@ void CActivator::Activate()
 
 		if(cgi == NULL)
 		{
-			CLog	log;
-			log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: CCgi is empty in module CActivator::ActivateAction");
+			MESSAGE_ERROR("", "", "CCgi is empty in module CActivator::ActivateAction");
 
 			throw CExceptionHTML("cgi error");
 		}
 		if(!cgi->SetTemplate("activate_user_complete.htmlt"))
 		{
-			CLog	log;
-
-			log.Write(ERROR, "CActivator::" + string(__func__) + "[" + to_string(__LINE__) + "]:ERROR: template file was missing");
+			MESSAGE_ERROR("", "", "template file was missing");
 			throw CException("Template file was missing");
 		}
 
