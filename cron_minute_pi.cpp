@@ -65,10 +65,7 @@ int main()
 	c_config		config(CONFIG_DIR);
 	struct timeval	tv;
 
-	{
-		CLog	log;
-		log.Write(DEBUG, __func__ + string("[") + to_string(__LINE__) + "]: " + __FILE__);
-	}
+	MESSAGE_DEBUG("", "", __FILE__);
 
 	signal(SIGSEGV, crash_handler); 
 
@@ -97,27 +94,23 @@ int main()
 	}
 	catch(CExceptionHTML &c)
 	{
-		CLog	log;
-
 		c.SetLanguage("ru");
 		c.SetDB(&db);
 
-		log.Write(DEBUG, string(__func__) + ": catch CExceptionHTML: DEBUG exception reason: [", c.GetReason(), "]");
+		MESSAGE_DEBUG("", "", "catch CExceptionHTML: DEBUG exception reason: [" + c.GetReason() + "]");
 
 		return(-1);
 	}
 	catch(CException &c)
 	{
-		CLog 	log;
 
-		log.Write(ERROR, string(__func__) + ": catch CException: exception: ERROR  ", c.GetReason());
+		MESSAGE_ERROR("", "", "catch CException: exception: ERROR  " + c.GetReason());
 
 		return(-1);
 	}
 	catch(exception& e)
 	{
-		CLog 	log;
-		log.Write(ERROR, string(__func__) + ": catch(exception& e): catch standard exception: ERROR  ", e.what());
+		MESSAGE_ERROR("", "", "catch(exception& e): catch standard exception: ERROR  " + e.what());
 
 		return(-1);
 	}

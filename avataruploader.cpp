@@ -23,12 +23,11 @@ static bool ImageSaveAsJpg(const string src, const string dst, c_config *config)
 		imageOrientation = image.orientation();
 
 		{
-			CLog	log;
 			ostringstream   ost;
 
 			ost.str("");
 			ost << "ImageSaveAsJpg (" << src << ", " << dst << "): imageOrientation = " << imageOrientation << ", xRes = " << imageGeometry.width() << ", yRes = " << imageGeometry.height();
-			log.Write(DEBUG, ost.str());
+			MESSAGE_DEBUG("", "", ost.str());
 		}
 
 		if(imageOrientation == Magick::TopRightOrientation) image.flop();
@@ -61,34 +60,18 @@ static bool ImageSaveAsJpg(const string src, const string dst, c_config *config)
 	}
 	catch( Magick::Exception &error_ )
 	{
-		{
-			CLog	log;
-			ostringstream   ost;
+		MESSAGE_ERROR("", "", "exception in read/write operation [" + error_.what() + "]")
 
-			ost.str("");
-			ost << "ImageSaveAsJpg (" << src << ", " << dst << "): exception in read/write operation [" << error_.what() << "]";
-			log.Write(DEBUG, ost.str());
-		}
 		return false;
 	}
-	{
-		CLog	log;
-		ostringstream   ost;
 
-		ost.str("");
-		ost << "ImageSaveAsJpg (" << src << ", " << dst << "): image has been successfully converted to .jpg format";
-		log.Write(DEBUG, ost.str());
-	}
+	MESSAGE_DEBUG("", "", "image has been successfully converted to .jpg format")
+
 	return true;
 #else
-	{
-		CLog	log;
-		ostringstream   ost;
 
-		ost.str("");
-		ost << "ImageSaveAsJpg (" << src << ", " << dst << "): simple file coping cause ImageMagick++ is not activated";
-		log.Write(DEBUG, ost.str());
-	}
+	MESSAGE_DEBUG("", "", "simple file coping cause ImageMagick++ is not activated");
+
 	CopyFile(src, dst);
 	return  true;
 #endif
@@ -106,10 +89,7 @@ int main()
 	ostringstream   ostJSONResult/*(static_cast<ostringstream&&>(ostringstream() << "["))*/;
 
 
-	{
-		CLog	log;
-		log.Write(DEBUG, __func__ + string("[") + to_string(__LINE__) + "]: " + __FILE__);
-	}
+	MESSAGE_DEBUG("", "", __FILE__)
 
 	signal(SIGSEGV, crash_handler); 
 
@@ -123,17 +103,15 @@ int main()
 
 		if(!indexPage.SetTemplate("index.htmlt"))
 		{
-			CLog	log;
 
-			log.Write(ERROR, "template file was missing");
+			MESSAGE_ERROR("", "", "template file was missing");
 			throw CException("Template file was missing");
 		}
 
 		if(db.Connect(&config) < 0)
 		{
-			CLog	log;
 
-			log.Write(ERROR, "Can not connect to mysql database");
+			MESSAGE_ERROR("", "", "Can not connect to mysql database");
 			throw CException("MySql connection");
 		}
 
@@ -182,23 +160,16 @@ int main()
 				affected = db.Query("select id from `users_avatars` where `userid`=" + quoted(user.GetID()) + ";");
 				if(affected < 4) // --- 1 text avatar and 3 image avatar
 				{ 
-					{
-						CLog	log;
-						ostringstream	ost;
-
-						ost << string(__func__) + ": number of files POST'ed = " << indexPage.GetFilesHandler()->Count();
-						log.Write(DEBUG, ost.str());
-					}
+					MESSAGE_DEBUG("", "", "number of files POST'ed = " + to_string(indexPage.GetFilesHandler()->Count()))
 
 					if(indexPage.GetFilesHandler()->GetSize(filesCounter) > file_size_limit) 
 					{
-						CLog			log;
 						ostringstream	ost;
 
 						ost.str("");
 						ost << string(__func__) + ": ERROR avatar file [" << indexPage.GetFilesHandler()->GetName(filesCounter) << "] size exceed permitted maximum: " << indexPage.GetFilesHandler()->GetSize(filesCounter) << " > " << file_size_limit;
 
-						log.Write(ERROR, ost.str());
+						MESSAGE_ERROR("", "", ost.str());
 						throw CExceptionHTML("avatar file size exceed", indexPage.GetFilesHandler()->GetName(filesCounter));
 					}
 
@@ -228,24 +199,15 @@ int main()
 
 					} while(isFileExists(file2Check) || isFileExists(tmpFile2Check) || isFileExists(tmpImageJPG));
 
-
-
-					{
-						CLog	log;
-						ostringstream	ost;
-
-						ost << string(__func__) + ": Save file to /tmp for checking of image validity [" << tmpFile2Check << "]";
-						log.Write(DEBUG, ost.str());
-					}
+					MESSAGE_DEBUG("", "", "Save file to /tmp for checking of image validity [" + tmpFile2Check + "]");
 
 					// --- Save file to "/tmp/" for checking of image validity
 					f = fopen(tmpFile2Check.c_str(), "w");   /* Flawfinder: ignore */
 					if(f == NULL)
 					{
 						{
-							CLog			log;
 
-							log.Write(ERROR, string(__func__) + ": ERROR writing file:", tmpFile2Check.c_str());
+							MESSAGE_ERROR("", "", "writing file: " + tmpFile2Check);
 							throw CExceptionHTML("avatar file write error", indexPage.GetFilesHandler()->GetName(filesCounter));
 						}
 					}
@@ -318,14 +280,7 @@ int main()
 					}
 					else
 					{
-						{
-							ostringstream   ost;
-							CLog			log;
-
-							ost.clear();
-							ost << string(__func__) + ": avatar [" << indexPage.GetFilesHandler()->GetName(filesCounter) << "] is not valid image";
-							log.Write(DEBUG, ost.str());
-						}
+						MESSAGE_DEBUG("", "", "avatar [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] is not valid image");
 
 						if(filesCounter == 0) ostJSONResult << "[" << std::endl;
 						if(filesCounter  > 0) ostJSONResult << ",";
@@ -344,14 +299,7 @@ int main()
 				} //--- Check that number of avatars <= 4
 				else
 				{
-					{
-						ostringstream   ost;
-						CLog			log;
-
-						ost.clear();
-						ost << string(__func__) + ": number of avatars for user " << user.GetLogin() << " exceeds 4";
-						log.Write(DEBUG, ost.str());
-					}
+					MESSAGE_DEBUG("", "", "number of avatars for user " + user.GetLogin() + " exceeds 4");
 
 					if(filesCounter == 0) ostJSONResult << "[" << std::endl;
 					if(filesCounter  > 0) ostJSONResult << ",";
@@ -386,9 +334,8 @@ int main()
 
 		if(!indexPage.SetTemplate("json_response.htmlt"))
 		{
-			CLog	log;
 
-			log.Write(ERROR, string(__func__) + ": ERROR template file was missing: ", "json_response_with_braces.htmlt");
+			MESSAGE_ERROR("", "", "template file is missing");
 			throw CException("Template file was missing");
 		}
 
@@ -397,12 +344,11 @@ int main()
 	}
 	catch(CExceptionHTML &c)
 	{
-		CLog	log;
 
 		c.SetLanguage(indexPage.GetLanguage());
 		c.SetDB(&db);
 
-		log.Write(ERROR, "catch CExceptionHTML: exception reason: [", c.GetReason(), "]");
+		MESSAGE_ERROR("", "", "catch CExceptionHTML: exception reason: [" + c.GetReason() + "]");
 
 		if(c.GetReason() == "avatar file write error")
 		{

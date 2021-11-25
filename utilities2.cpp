@@ -221,12 +221,11 @@ int convert_utf8_to_windows1251(const char* utf8, char* windows1251, size_t n)
 								}
 								// can't convert this char
 								{
-									CLog	log;
 									ostringstream	ost;
 
 									ost.str("");
-									ost << __func__ << "[" << __LINE__ << "]:" << ": symbol at position " << i << " [" << hex << (prefix & 0xFF) << " " << (suffix & 0xFF) << "] doesn't belongs to UTF-8 cyrillic range (U+0400 ... U+04FF)";
-									log.Write(DEBUG, ost.str());
+									ost << "symbol at position " << i << " [" << hex << (prefix & 0xFF) << " " << (suffix & 0xFF) << "] doesn't belongs to UTF-8 cyrillic range (U+0400 ... U+04FF)";
+									MESSAGE_DEBUG("", "", ost.str());
 								}
 								return 0;
 						}
@@ -241,12 +240,11 @@ NEXT_LETTER:
 					if((i + 3) < n)
 					{
 						{
-							CLog	log;
 							ostringstream   ost;
 
 							ost.str("");
-							ost << __func__ << "[" << __LINE__ << "]:" << ": emojy detected [" << hex << (utf8[i] & 0xFF) << " " << (utf8[i+1] & 0xFF) << " " << (utf8[i+2] & 0xFF) << " " << (utf8[i+3] & 0xFF) << "]";
-							log.Write(DEBUG, ost.str());
+							ost << "emojy detected [" << hex << (utf8[i] & 0xFF) << " " << (utf8[i+1] & 0xFF) << " " << (utf8[i+2] & 0xFF) << " " << (utf8[i+3] & 0xFF) << "]";
+							MESSAGE_DEBUG("", "", ost.str());
 						}
 						i += 3;
 					}
@@ -294,12 +292,11 @@ NEXT_LETTER:
 							j++;
 
 							// can't convert this char
-							CLog	log;
 							ostringstream   ost;
 
 							ost.str("");
-							ost << __func__ << "[" << __LINE__ << "]:" << ": symbol at position " << (i - 2) << " [" << hex << (prefix & 0xFF) << " " << (suffix & 0xFF) << " " << (utf8[i+2 - 2] & 0xFF) << "] not found in mapping table Punctuation range (U+0400 ... U+04FF)";
-							log.Write(DEBUG, ost.str());
+							ost << "symbol at position " << (i - 2) << " [" << hex << (prefix & 0xFF) << " " << (suffix & 0xFF) << " " << (utf8[i+2 - 2] & 0xFF) << "] not found in mapping table Punctuation range (U+0400 ... U+04FF)";
+							MESSAGE_DEBUG("", "", ost.str());
 						}
 					}
 					else
@@ -313,12 +310,11 @@ NEXT_LETTER:
 				{
 					// can't convert this chars
 					{
-						CLog	log;
 						ostringstream   ost;
 
 						ost.str("");
-						ost << __func__ << "[" << __LINE__ << "]:ERROR: can't convert this " << i << "-rd/th char " << hex << (+prefix & 0xFF) << " " << (+suffix & 0xFF);
-						log.Write(ERROR, ost.str());
+						ost << "can't convert this " << i << "-rd/th char " << hex << (+prefix & 0xFF) << " " << (+suffix & 0xFF);
+						MESSAGE_ERROR("", "", ost.str());
 					}
 					return 0;
 				}
@@ -1299,14 +1295,10 @@ string GetCompanyPositionsInJSONFormat(string dbQuery, CMysql *db, CUser *user)
 	} // --- if sql-query on event selection success
 	else
 	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) + "]: there are no themes returned by request [", dbQuery, "]");
+		MESSAGE_DEBUG("", "", "there are no themes returned by request [" + dbQuery + "]");
 	}
 
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) + "]: end (result length = " + to_string(ostFinal.str().length()) + ")");
-	}
+	MESSAGE_DEBUG("", "", "end (result length = " + to_string(ostFinal.str().length()) + ")");
 
 	return ostFinal.str();
 }
@@ -1360,14 +1352,10 @@ string GetSiteThemesInJSONFormat(string dbQuery, CMysql *db, CUser *user)
 	} // --- if sql-query on event selection success
 	else
 	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) + "]: there are no themes returned by request [", dbQuery, "]");
+		MESSAGE_DEBUG("", "", "there are no themes returned by request [" + dbQuery + "]");
 	}
 
-	{
-		CLog	log;
-		log.Write(DEBUG, string(__func__) + "[" + to_string(__LINE__) + "]: end (result length = " + to_string(ostFinal.str().length()) + ")");
-	}
+	MESSAGE_DEBUG("", "", "end (result length = " + to_string(ostFinal.str().length()) + ")");
 
 	return ostFinal.str();
 }
