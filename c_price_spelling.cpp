@@ -1,7 +1,7 @@
 #include "c_price_spelling.h"
 
 
-long C_Price_Spelling::GetWhole(double val)
+unsigned long C_Price_Spelling::GetWhole(double val)
 {
     double	intpart;
     long	result;
@@ -12,18 +12,25 @@ long C_Price_Spelling::GetWhole(double val)
     return result;
 }
 
-long C_Price_Spelling::GetFraction(double val)
+unsigned long C_Price_Spelling::GetFraction(double val)
 {
     double	fractpart, intpart;
     long	result;
 
-    fractpart = modf (val , &intpart);
+    fractpart = modf (val, &intpart);
+
+    // --- do _NOT_ try more than 2 numbers in fractional part
+    // --- there always be a problem with rounding due to internat double representation
+    // --- which is based on hexadecimal numbers
+    // --- more details here: https://stackoverflow.com/questions/4008395/rounding-problem-with-double-type
     result = lround(fma(fractpart, 100, 0));
+
+    MESSAGE_DEBUG("", "", "val / intpart / fractpart / fma(fractpart) / lround(fma(fracpart)) / result (" + to_string(val) + " / "  + to_string(intpart) +  " / " + to_string(fractpart) + " / " + to_string(fma(fractpart, 100, 0)) + " / " + to_string(lround(fma(fractpart, 100, 0))) + " / " + to_string(result) + ")");
 
     return result;
 }
 
-auto C_Price_Spelling::DeclensionIndex(long number) -> int
+auto C_Price_Spelling::DeclensionIndex(unsigned long number) -> int
 {
     MESSAGE_DEBUG("", "", "start");
 
@@ -48,7 +55,7 @@ auto C_Price_Spelling::DeclensionIndex(long number) -> int
     return result;
 }
 
-auto C_Price_Spelling::SpellOrderOfMagnitude(int order_of_magnitude, long number) -> string
+auto C_Price_Spelling::SpellOrderOfMagnitude(int order_of_magnitude, unsigned long number) -> string
 {
     MESSAGE_DEBUG("", "", "start");
 
@@ -59,17 +66,17 @@ auto C_Price_Spelling::SpellOrderOfMagnitude(int order_of_magnitude, long number
     return result;
 }
 
-auto C_Price_Spelling::SpellHundreds(long number, int gender) -> string
+auto C_Price_Spelling::SpellHundreds(unsigned long number, int gender) -> string
 {
     return spelling_hundreds[gender][number - 1];
 }
 
-auto C_Price_Spelling::SpellTenths(long number, int gender) -> string
+auto C_Price_Spelling::SpellTenths(unsigned long number, int gender) -> string
 {
     return spelling_tenths[gender][number - 1];
 }
 
-auto C_Price_Spelling::Spell11_19(long number, int gender) -> string
+auto C_Price_Spelling::Spell11_19(unsigned long number, int gender) -> string
 {
     MESSAGE_DEBUG("", "", "start (" + to_string(number) + ")");
 
@@ -78,13 +85,13 @@ auto C_Price_Spelling::Spell11_19(long number, int gender) -> string
     return spelling_11_19[gender][number - 11];
 }
 
-auto C_Price_Spelling::SpellDigit(long number, int gender) -> string
+auto C_Price_Spelling::SpellDigit(unsigned long number, int gender) -> string
 {
     return spelling_digit[gender][number - 1];
 }
 
 
-auto C_Price_Spelling::SpellUpToThousand(long number, int gender) -> string
+auto C_Price_Spelling::SpellUpToThousand(unsigned long number, int gender) -> string
 {
     MESSAGE_DEBUG("", "", "start (" + to_string(number) + ", " + to_string(gender) + ")");
 
@@ -125,13 +132,13 @@ auto C_Price_Spelling::SpellUpToThousand(long number, int gender) -> string
     return result;
 }
 
-auto C_Price_Spelling::SpellNumber(long number, int gender) -> string
+auto C_Price_Spelling::SpellNumber(unsigned long number, int gender) -> string
 {
     MESSAGE_DEBUG("", "", "start");
 
     auto            result = ""s;
 
-    if(number <= max)
+    if((long)number <= max)
     {
         auto            temp = number;
         stack<string>   spelling_stack;
@@ -172,7 +179,7 @@ auto C_Price_Spelling::SpellNumber(long number, int gender) -> string
     return result;
 }
  
-auto C_Price_Spelling::SpellRubles(long numbers) -> string
+auto C_Price_Spelling::SpellRubles(unsigned long numbers) -> string
 {
     MESSAGE_DEBUG("", "", "start");
 
@@ -185,7 +192,7 @@ auto C_Price_Spelling::SpellRubles(long numbers) -> string
     return result;
 }
  
-auto C_Price_Spelling::SpellCents(long numbers) -> string
+auto C_Price_Spelling::SpellCents(unsigned long numbers) -> string
 {
     MESSAGE_DEBUG("", "", "start");
 
@@ -200,9 +207,13 @@ auto C_Price_Spelling::SpellCents(long numbers) -> string
  
 auto C_Price_Spelling::Spelling() -> string
 {
-    MESSAGE_DEBUG("", "", "start");
-
     MESSAGE_DEBUG("", "", "start (" + to_string(price) + ")");
+
+    if(price < 0)
+    {
+        price = -price;
+        minus_flag = true;
+    }
 
     auto result = ""s;
     auto whole = GetWhole(price);
@@ -217,6 +228,9 @@ auto C_Price_Spelling::Spelling() -> string
         if(result.length()) result += " ";
         result += spell_fraction + " " + SpellCents(fraction);
     }
+
+    if(minus_flag)
+        result = spelling_minus + " " + result;
 
     MESSAGE_DEBUG("", "", "finish");
 
