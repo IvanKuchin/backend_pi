@@ -898,7 +898,7 @@ void CRequest::RegisterURLVariables(CVars *v, CFiles *f)
 string CRequest::WebString(string str)
 {
     string		result(str), result1;
-    string::size_type	findPos, findPos1, findPos2, firstPos = 0;
+    string::size_type	findPos, firstPos = 0;
     string		table("0123456789ABCDEF");
     unsigned int	first, second;
     char		resCh;
