@@ -362,7 +362,6 @@ auto ReplaceAmpTagToCharacter(string src) -> string
 auto RemoveSpecialHTMLSymbols(const wstring &src) -> wstring
 {
 	auto					result(src);
-	wstring::size_type		pos = 0;
 	map<wstring, wstring>	map_replacement = {
 		{L"\\", L"&#92;"},
 		{L"\t", L" "},
@@ -715,7 +714,7 @@ string GetLocalFormattedTimestamp()
 	}
 
 	memset(buffer, 0, 80);
-	strftime(buffer,80,"%Y-%m-%02d %T", local_tm);
+	strftime(buffer,80,"%Y-%m-%d %T", local_tm);
 	result = buffer;
 
 	MESSAGE_DEBUG("", "", "finish (" + result + ")");
