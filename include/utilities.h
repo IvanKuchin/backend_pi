@@ -289,6 +289,7 @@ auto		ParseGPSLongitude(const string longitudeStr)	-> string;
 auto		ParseGPSLatitude(const string latitudeStr)		-> string;
 auto		ParseGPSAltitude(const string altitudeStr)		-> string;
 auto		ParseGPSSpeed(const string speedStr)			-> string;
+auto		GenerateImage(const string &randStr)			-> string;
 
 auto		GetDomain()										-> string;
 auto		isDemoDomain()									-> bool;

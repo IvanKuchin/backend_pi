@@ -2813,3 +2813,76 @@ auto GetDomain() -> string
     return result;
 }
 
+// --- Generating image with text "randStr"
+// --- Input: randStr - text needs to be written on the image
+// --- Output: path to the file
+auto GenerateImage(const string &randStr) -> string
+{
+	MESSAGE_DEBUG("", "", "start");
+
+	auto	fileName = IMAGE_DIRECTORY + "pages/login/dessin.gif";
+	auto	annotateFlag = "yes"s;
+	string	fileFont, fileResultFull, fileResult;
+
+	if(!fileName.empty())
+	{
+		if(annotateFlag == "yes")
+		{
+			try
+			{
+				Magick::InitializeMagick(NULL);
+				MESSAGE_DEBUG("", "", "InitializeMagick timing");
+				
+				Magick::Image		imageMaster, imageDest;
+				ostringstream 		ost;
+				auto 				fileFlagExist = true;
+
+				imageMaster.read(fileName);    /* Flawfinder: ignore */
+				imageDest = imageMaster;
+				imageDest.fontPointsize(14);
+				imageDest.addNoise(Magick::GaussianNoise);
+				imageDest.addNoise(Magick::GaussianNoise);
+				ost.str("");
+				ost << "+" << 1 + (int)(rand()/(RAND_MAX + 1.0) * 45) << "+" << 13 + (int)(rand()/(RAND_MAX + 1.0) * 10);
+				imageDest.annotate(randStr, Magick::Geometry(ost.str()));
+			
+				do {
+					MESSAGE_DEBUG("", "", "checking captcha file existence")
+
+					fileResult = "_";
+					fileResult += GetRandom(10);
+					fileResult += ".gif";
+					fileResultFull = IMAGE_CAPTCHA_DIRECTORY;
+					fileResultFull += fileResult;
+					auto fh = open(fileResultFull.c_str(), O_RDONLY);    /* Flawfinder: ignore */
+					if(fh < 0) 
+					{
+						fileFlagExist = false;
+
+						MESSAGE_DEBUG("", "", "trying file " + fileResultFull + " -> can be used for writing");
+					}
+					else 
+					{ 
+						close(fh); 
+
+						MESSAGE_DEBUG("", "", "trying file " + fileResultFull + " -> can't be used, needs another one");
+					}
+				} while(fileFlagExist == true);
+
+
+				MESSAGE_DEBUG("", "", "write captcha-image to " + fileResultFull);
+
+				imageDest.write(fileResultFull);
+			}
+			catch(Magick::Exception &error_)
+			{
+				MESSAGE_ERROR("", "", "Caught exception: " + error_.what())
+				fileResult = "";		
+			}
+		}
+	}
+
+	MESSAGE_DEBUG("", "", "finish (" + fileResult + ")");
+
+	return fileResult;
+}
