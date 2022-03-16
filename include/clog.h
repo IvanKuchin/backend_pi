@@ -116,6 +116,7 @@ class CLog
 			    {
 			    	string			msCount = to_string(ms.count());
 			    	char			localtimeBuffer[80];   /* Flawfinder: ignore */
+			    	char			tzBuffer[80];   /* Flawfinder: ignore */
 				    auto			curr_locale	= string(setlocale(LC_ALL, NULL));	// --- DO NOT remove string() !
 				    																// --- otherwise following setlocale call will change memory content where curr_locale pointing out
 				    																// --- string() copies memory content to local stack therefore it could be reused later.
@@ -123,12 +124,13 @@ class CLog
 				    setlocale(LC_ALL, LOCALE_ENGLISH.c_str());
 				    // --- do NOT change time format !!!
 				    // --- fluent-bit parses it as a timestamp regexp
-			    	strftime(localtimeBuffer, 80 - 1, "%b %d %Y %T", timeInfo);
+			    	strftime(localtimeBuffer, 80 - 1, "%FT%T", timeInfo);
+			    	strftime(tzBuffer, 80 - 1, "%z", timeInfo);
 				    setlocale(LC_ALL, curr_locale.c_str());
 
 			    	if(msCount.length() > 6) msCount = msCount.substr(msCount.length() - 6, 6);
 
-					fs << localtimeBuffer << "." << msCount << "";
+					fs << localtimeBuffer << "." << msCount << tzBuffer;
 			    }
 
 			    // --- do NOT change log format !!!
