@@ -32,7 +32,7 @@
 #define LOCALE_PATH									"${LOCALE_INSTALL_DIR}"s
 
 #define	DEFAULT_LANGUAGE							"ru"
-#define	TEMPLATE_PATH								string(ROOTDIR) + string("/cgi-bin/templates/")
+#define	TEMPLATE_PATH								string("${TEMPLATES_INSTALL_DIR}/")
 
 #define	NEWS_ON_SINGLE_PAGE							30
 #define	FRIENDS_ON_SINGLE_PAGE						30
