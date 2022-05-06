@@ -334,7 +334,7 @@ auto 		LogoutIfGuest(string action, c_config *config, CCgi *indexPage, CMysql *d
 
 			indexPage->RegisterVariableForce("result", "{\"result\":\"error\",\"description\":\""s + gettext("re-login required") + "\"}");
 
-			if(!indexPage->SetTemplate(template_name))
+			if(!indexPage->SetProdTemplate(template_name))
 			{
 				MESSAGE_ERROR("", "", "can't find template " + template_name);
 			}
@@ -390,7 +390,7 @@ auto AJAX_ResponseTemplate(CCgi *indexPage, const string &success_message, const
 
 	indexPage->RegisterVariableForce("result", result);
 
-	if(!indexPage->SetTemplate(template_name))
+	if(!indexPage->SetProdTemplate(template_name))
 	{
 		MESSAGE_DEBUG("", "", "can't find template " + template_name);
 	}

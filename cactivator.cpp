@@ -142,7 +142,7 @@ void CActivator::Activate()
 
 			throw CExceptionHTML("cgi error");
 		}
-		if(!cgi->SetTemplate("activate_user_complete.htmlt"))
+		if(!cgi->SetProdTemplate("activate_user_complete.htmlt"))
 		{
 			MESSAGE_ERROR("", "", "template file was missing");
 			throw CException("Template file was missing");
