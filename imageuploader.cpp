@@ -276,7 +276,7 @@ int main()
 	{
 		indexPage.ParseURL();
 
-		if(!indexPage.SetTemplate("index.htmlt"))
+		if(!indexPage.SetProdTemplate("index.htmlt"))
 		{
 			MESSAGE_ERROR("", "", "template file was missing");
 			throw CException("Template file was missing");
@@ -818,7 +818,7 @@ int main()
 		{
 			indexPage.RegisterVariableForce("result", ostJSONResult.str());
 
-			if(!indexPage.SetTemplate("json_response.htmlt"))
+			if(!indexPage.SetProdTemplate("json_response.htmlt"))
 			{
 				MESSAGE_ERROR("", "", "template file was missing: json_response.htmlt");
 				throw CException("Template file was missing");
@@ -846,7 +846,7 @@ int main()
 		ost << "}]" << std::endl;
 		indexPage.RegisterVariableForce("result", ost.str());
 
-		if(!indexPage.SetTemplate(c.GetTemplate()))
+		if(!indexPage.SetProdTemplate(c.GetTemplate()))
 		{
 			MESSAGE_ERROR("", "", "template not found");
 			return(-1);
@@ -860,7 +860,7 @@ int main()
 	{
 		MESSAGE_ERROR("", action, "catch CException: exception: ERROR  " + c.GetReason());
 
-		if(!indexPage.SetTemplateFile("templates/error.htmlt"))
+		if(!indexPage.SetProdTemplate("error.htmlt"))
 		{
 			MESSAGE_ERROR("", "", "template not found");
 			return(-1);
@@ -875,7 +875,7 @@ int main()
 	{
 		MESSAGE_ERROR("", action, "catch(exception& e): catch standard exception: ERROR  " + e.what());
 
-		if(!indexPage.SetTemplateFile("templates/error.htmlt"))
+		if(!indexPage.SetProdTemplate("error.htmlt"))
 		{
 			MESSAGE_ERROR("", "", "template not found");
 			return(-1);

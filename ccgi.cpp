@@ -13,18 +13,18 @@ CCgi::CCgi() :  templateFile(NULL), initHeadersFlag(1)
 
 CCgi::CCgi(const char *fileName, int initFlag = 1) : initHeadersFlag(initFlag)
 {
-    SetTemplateFile(fileName);
+    SetTemplate(fileName);
 }
 
 CCgi::CCgi(const char *fileName, CVars v) : initHeadersFlag(1)
 {
-    SetTemplateFile(fileName);
+    SetTemplate(fileName);
     vars = v;
 }
 
 CCgi::CCgi(const char *fileName, CVars v, CFiles f) : initHeadersFlag(1)
 {
-    SetTemplateFile(fileName);
+    SetTemplate(fileName);
     vars = v;
     files = f;
 }
@@ -142,12 +142,12 @@ string	CCgi::GetCountry()
 	return result;
 }
 
-bool CCgi::SetTemplate(string templ)
+bool CCgi::SetTemplate(const string &templ)
 {
 	return SetTemplateFile(TEMPLATE_PATH + GetLanguage() + "/pages/" + templ);
 }
 
-bool CCgi::SetTemplateFile(string fileName)
+bool CCgi::SetTemplateFile(const string &fileName)
 {
 	auto	result = true;
 

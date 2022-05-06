@@ -424,7 +424,7 @@ int main(void)
 
 		indexPage.ParseURL();
 
-		if(!indexPage.SetTemplate("index.htmlt"))
+		if(!indexPage.SetProdTemplate("index.htmlt"))
 		{
 			MESSAGE_ERROR("", action, "template file was missing");
 			throw CException("Template file was missing");
@@ -473,7 +473,7 @@ int main(void)
 			{
 				string		template_name = action.substr(0, action.length() - 9) + ".htmlt";
 
-				if(!indexPage.SetTemplate(template_name))
+				if(!indexPage.SetProdTemplate(template_name))
 				{
 					MESSAGE_ERROR("", action, "can't find template " + template_name);
 				}
@@ -872,7 +872,7 @@ int main(void)
 
 		MESSAGE_DEBUG("", action, "catch CExceptionHTML: DEBUG exception reason: [" + c.GetReason() + "]");
 
-		if(!indexPage.SetTemplate(c.GetTemplate()))
+		if(!indexPage.SetProdTemplate(c.GetTemplate()))
 		{
 			MESSAGE_ERROR("", "", "template (" + c.GetTemplate() + ") not found");
 			return(-1);
@@ -887,7 +887,7 @@ int main(void)
 	{
 		MESSAGE_ERROR("", action, "catch CException: exception: ERROR  " + c.GetReason());
 
-		if(!indexPage.SetTemplateFile("templates/error.htmlt"))
+		if(!indexPage.SetProdTemplate("error.htmlt"))
 		{
 			MESSAGE_ERROR("", "", "template not found");
 			return(-1);
@@ -902,7 +902,7 @@ int main(void)
 	{
 		MESSAGE_ERROR("", action, "catch(exception& e): catch standard exception: ERROR  " + e.what());
 
-		if(!indexPage.SetTemplateFile("templates/error.htmlt"))
+		if(!indexPage.SetProdTemplate("error.htmlt"))
 		{
 			MESSAGE_ERROR("", "", "template not found");
 			return(-1);

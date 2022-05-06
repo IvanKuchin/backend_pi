@@ -201,11 +201,11 @@ endforeach()
 
 # --- Install part
 foreach(EXECUTABLE_CGI ${EXECUTABLE_CGIs})
-    install(TARGETS ${EXECUTABLE_CGI}       DESTINATION		${CGIDIR})
+    install(TARGETS ${EXECUTABLE_CGI}       DESTINATION		${CGIDIR}	COMPONENT app)
 endforeach()
 
 foreach(EXECUTABLE_CRON ${EXECUTABLE_CRONs})
-    install(TARGETS ${EXECUTABLE_CRON}       DESTINATION     ${CRON_INSTALL_DIR})
+    install(TARGETS ${EXECUTABLE_CRON}       DESTINATION     ${CRON_INSTALL_DIR}	COMPONENT cron)
 endforeach()
 
-# print_all_variables()
+#print_all_variables()
