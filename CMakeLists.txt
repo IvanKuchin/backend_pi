@@ -1,11 +1,15 @@
 set(EXECUTABLE_CGIs
     helpdesk.cgi
     account.cgi
-    avataruploader.cgi
-    generalimageuploader.cgi
-    imageuploader.cgi
     noauth.cgi
     )
+
+set(EXECUTABLE_UPLOADERs
+    imageuploader.cgi
+    avataruploader.cgi
+    generalimageuploader.cgi
+    )
+
 
 set(EXECUTABLE_CRONs
     cron_daily_pi
@@ -193,6 +197,10 @@ foreach(EXECUTABLE_CGI ${EXECUTABLE_CGIs})
     __add_executable_2libs  (${EXECUTABLE_CGI}      "${PROJECT_PI_INCLUDE_DIRECTORIES}" "${PROJECT_PI_LIBS}" "${PROJECT_EXTERNAL_LIBS}")
 endforeach()
 
+foreach(EXECUTABLE_UPLOADER ${EXECUTABLE_UPLOADERs})
+    __add_executable_2libs  (${EXECUTABLE_UPLOADER}      "${PROJECT_PI_INCLUDE_DIRECTORIES}" "${PROJECT_PI_LIBS}" "${PROJECT_EXTERNAL_LIBS}")
+endforeach()
+
 foreach(EXECUTABLE_CRON ${EXECUTABLE_CRONs})
     __add_executable_2libs  (${EXECUTABLE_CRON}      "${PROJECT_PI_INCLUDE_DIRECTORIES}" "${PROJECT_PI_LIBS}" "${PROJECT_EXTERNAL_LIBS}")
 endforeach()
@@ -202,6 +210,10 @@ endforeach()
 # --- Install part
 foreach(EXECUTABLE_CGI ${EXECUTABLE_CGIs})
     install(TARGETS ${EXECUTABLE_CGI}       DESTINATION		${CGIDIR}	COMPONENT app)
+endforeach()
+
+foreach(EXECUTABLE_UPLOADER ${EXECUTABLE_UPLOADERs})
+    install(TARGETS ${EXECUTABLE_UPLOADER}       DESTINATION		${CGIDIR}	COMPONENT uploaders)
 endforeach()
 
 foreach(EXECUTABLE_CRON ${EXECUTABLE_CRONs})
