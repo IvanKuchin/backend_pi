@@ -33,7 +33,6 @@ set(JOINT_LIBRARY_SRCs
     ctemplate.cpp
     cfiles.cpp
     cstatistics.cpp
-    cvideoconverter.cpp
     c_float.cpp
     c_config.cpp
     c_smsc.cpp
@@ -47,6 +46,7 @@ set(JOINT_LIBRARY_SRCs
 set(INDEPENDENT_LIBRARIES_SRC
     c_archive.cpp
     c_price_spelling.cpp
+#    cvideoconverter.cpp
     )
 
 # --- MACROSes start ---
@@ -177,6 +177,13 @@ foreach(INDEPENDENT_LIBRARY_SRC ${INDEPENDENT_LIBRARIES_SRC})
 
     set_pi_lib_properties(${file_without_ext} "${file_without_ext}.cpp" "${PROJECT_PI_INCLUDE_DIRECTORIES}" "")
 endforeach()
+
+if(FFPMPEG_DISABLE)
+    message("video libraries are not linked")
+else(FFPMPEG_DISABLE)
+    set_pi_lib_properties(cvideoconverter "cvideoconverter.cpp" "${PROJECT_PI_INCLUDE_DIRECTORIES}" "")
+endif(FFPMPEG_DISABLE)
+
 
 # ---- big joint library
 # ---- ATTENTION !!!
