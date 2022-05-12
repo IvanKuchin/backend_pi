@@ -204,13 +204,17 @@ foreach(EXECUTABLE_CGI ${EXECUTABLE_CGIs})
     __add_executable_2libs  (${EXECUTABLE_CGI}      "${PROJECT_PI_INCLUDE_DIRECTORIES}" "${PROJECT_PI_LIBS}" "${PROJECT_EXTERNAL_LIBS}")
 endforeach()
 
-foreach(EXECUTABLE_UPLOADER ${EXECUTABLE_UPLOADERs})
-    __add_executable_2libs  (${EXECUTABLE_UPLOADER}      "${PROJECT_PI_INCLUDE_DIRECTORIES}" "${PROJECT_PI_LIBS}" "${PROJECT_EXTERNAL_LIBS}")
-endforeach()
-
 foreach(EXECUTABLE_CRON ${EXECUTABLE_CRONs})
     __add_executable_2libs  (${EXECUTABLE_CRON}      "${PROJECT_PI_INCLUDE_DIRECTORIES}" "${PROJECT_PI_LIBS}" "${PROJECT_EXTERNAL_LIBS}")
 endforeach()
+
+if(FFPMPEG_DISABLE)
+    message("Videoconverter/ffmpeg turned off")
+else(FFPMPEG_DISABLE)
+    foreach(EXECUTABLE_UPLOADER ${EXECUTABLE_UPLOADERs})
+	__add_executable_2libs  (${EXECUTABLE_UPLOADER}      "${PROJECT_PI_INCLUDE_DIRECTORIES}" "${PROJECT_PI_LIBS}" "${PROJECT_EXTERNAL_LIBS}")
+    endforeach()
+endif(FFPMPEG_DISABLE)
 
 # --- Install settings
 
