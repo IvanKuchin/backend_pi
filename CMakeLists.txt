@@ -224,11 +224,18 @@ foreach(EXECUTABLE_CGI ${EXECUTABLE_CGIs})
 endforeach()
 
 foreach(EXECUTABLE_UPLOADER ${EXECUTABLE_UPLOADERs})
-    install(TARGETS ${EXECUTABLE_UPLOADER}       DESTINATION		${CGIDIR}	COMPONENT uploaders)
 endforeach()
 
 foreach(EXECUTABLE_CRON ${EXECUTABLE_CRONs})
     install(TARGETS ${EXECUTABLE_CRON}       DESTINATION     ${CRON_INSTALL_DIR}	COMPONENT cron)
 endforeach()
+
+if(FFPMPEG_DISABLE)
+    message("Videoconverter/ffmpeg turned off")
+else(FFPMPEG_DISABLE)
+    foreach(EXECUTABLE_UPLOADER ${EXECUTABLE_UPLOADERs})
+        install(TARGETS ${EXECUTABLE_UPLOADER}       DESTINATION		${CGIDIR}	COMPONENT uploaders)
+    endforeach()
+endif(FFPMPEG_DISABLE)
 
 #print_all_variables()
