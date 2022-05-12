@@ -46,7 +46,7 @@ set(JOINT_LIBRARY_SRCs
 set(INDEPENDENT_LIBRARIES_SRC
     c_archive.cpp
     c_price_spelling.cpp
-#    cvideoconverter.cpp
+    cvideoconverter.cpp
     )
 
 # --- MACROSes start ---
@@ -178,13 +178,6 @@ foreach(INDEPENDENT_LIBRARY_SRC ${INDEPENDENT_LIBRARIES_SRC})
     set_pi_lib_properties(${file_without_ext} "${file_without_ext}.cpp" "${PROJECT_PI_INCLUDE_DIRECTORIES}" "")
 endforeach()
 
-if(FFPMPEG_DISABLE)
-    message("video libraries are not linked")
-else(FFPMPEG_DISABLE)
-    set_pi_lib_properties(cvideoconverter "cvideoconverter.cpp" "${PROJECT_PI_INCLUDE_DIRECTORIES}" "")
-endif(FFPMPEG_DISABLE)
-
-
 # ---- big joint library
 # ---- ATTENTION !!!
 # ---- order is important: joint_lib must follow INDEPENDENT LIBS to help g++-linker resolve dependencies
@@ -208,13 +201,9 @@ foreach(EXECUTABLE_CRON ${EXECUTABLE_CRONs})
     __add_executable_2libs  (${EXECUTABLE_CRON}      "${PROJECT_PI_INCLUDE_DIRECTORIES}" "${PROJECT_PI_LIBS}" "${PROJECT_EXTERNAL_LIBS}")
 endforeach()
 
-if(FFPMPEG_DISABLE)
-    message("Videoconverter/ffmpeg turned off")
-else(FFPMPEG_DISABLE)
-    foreach(EXECUTABLE_UPLOADER ${EXECUTABLE_UPLOADERs})
-	__add_executable_2libs  (${EXECUTABLE_UPLOADER}      "${PROJECT_PI_INCLUDE_DIRECTORIES}" "${PROJECT_PI_LIBS}" "${PROJECT_EXTERNAL_LIBS}")
-    endforeach()
-endif(FFPMPEG_DISABLE)
+foreach(EXECUTABLE_UPLOADER ${EXECUTABLE_UPLOADERs})
+    __add_executable_2libs  (${EXECUTABLE_UPLOADER}      "${PROJECT_PI_INCLUDE_DIRECTORIES}" "${PROJECT_PI_LIBS}" "${PROJECT_EXTERNAL_LIBS}")
+endforeach()
 
 # --- Install settings
 
@@ -230,12 +219,8 @@ foreach(EXECUTABLE_CRON ${EXECUTABLE_CRONs})
     install(TARGETS ${EXECUTABLE_CRON}       DESTINATION     ${CRON_INSTALL_DIR}	COMPONENT cron)
 endforeach()
 
-if(FFPMPEG_DISABLE)
-    message("Videoconverter/ffmpeg turned off")
-else(FFPMPEG_DISABLE)
-    foreach(EXECUTABLE_UPLOADER ${EXECUTABLE_UPLOADERs})
-        install(TARGETS ${EXECUTABLE_UPLOADER}       DESTINATION		${CGIDIR}	COMPONENT uploaders)
-    endforeach()
-endif(FFPMPEG_DISABLE)
+foreach(EXECUTABLE_UPLOADER ${EXECUTABLE_UPLOADERs})
+    install(TARGETS ${EXECUTABLE_UPLOADER}       DESTINATION		${CGIDIR}	COMPONENT uploaders)
+endforeach()
 
 #print_all_variables()
