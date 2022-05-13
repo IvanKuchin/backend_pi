@@ -5,6 +5,12 @@
 #include <sys/stat.h>
 #include <sys/resource.h>
 
+#include "localy.h"
+#include "clog.h"
+#include "utilities.h"
+
+// --- below variable defined in localy.h, 
+// --- which means include must be declared before this block
 #ifndef	FFPMPEG_DISABLE
 extern "C"
 {
@@ -13,9 +19,6 @@ extern "C"
 }
 #endif
 
-#include "localy.h"
-#include "clog.h"
-#include "utilities.h"
 
 using namespace std;
 
