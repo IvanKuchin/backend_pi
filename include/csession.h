@@ -3,10 +3,6 @@
 
 using namespace std;
 
-#ifndef MAXMIND_DISABLE
-#include <maxminddb.h>
-#endif
-
 #include <sys/time.h>
 #include <string>
 #include <sstream>
@@ -15,6 +11,12 @@ using namespace std;
 #include "ccookie.h"
 #include "utilities.h"
 #include "localy.h"
+
+// --- below variable defined in localy.h, 
+// --- which means include must be declared before this block
+#ifndef MAXMIND_DISABLE
+#include <maxminddb.h>
+#endif
 
 #define	SESSION_LEN	60	// --- session duration in minutes
 
