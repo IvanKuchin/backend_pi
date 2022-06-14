@@ -82,9 +82,8 @@ bool CCgi::isAcceptedLanguage(string lang)
 
 string CCgi::GetLanguage()
 {
-	string	tryLng;
+	auto  tryLng = GetVarsHandler()->Get("lng");
 
-	tryLng = GetVarsHandler()->Get("lng");
 	if(tryLng.empty())
 		tryLng = GetCookie("lng");
 	if(tryLng.empty() && getenv("REMOTE_ADDR"))   /* Flawfinder: ignore */
