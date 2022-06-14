@@ -99,19 +99,6 @@ string CCgi::GetLanguage()
 
 string CCgi::GetEncoding()
 {
-	string	result, lng;
-
-	lng = GetLanguage();
-
-	if(lng.empty())
-		return "utf-8";
-	if(lng == "ru")
-		return "utf-8";
-	if(lng == "en")
-		return "utf-8";
-
-	MESSAGE_DEBUG("", "", "unknown language (" + lng + ")");
-
 	return "utf-8";
 }
 
