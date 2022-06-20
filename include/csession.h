@@ -19,6 +19,7 @@ using namespace std;
 #endif
 
 #define	SESSION_LEN	60	// --- session duration in minutes
+#define	API_SESSION_LEN	5	// --- session duration in minutes
 
 class CSession
 {

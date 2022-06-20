@@ -6,7 +6,7 @@ int main()
 	CCgi			indexPage(EXTERNAL_TEMPLATE);
 	CUser			user;
 	c_config		config(CONFIG_DIR);
-	string			action, partnerID;
+	auto			action = ""s;
 	CMysql			db;
 	struct timeval	tv;
 
@@ -121,6 +121,63 @@ int main()
 			}
 
 			AJAX_ResponseTemplate(&indexPage, "", error_message);
+
+			MESSAGE_DEBUG("", action, "finish");
+		}
+
+		if(action == "API_login")
+		{
+			MESSAGE_DEBUG("", action, "start");
+
+			auto			error_message = ""s;
+			auto			success_message = ""s;
+
+			auto			login = CheckHTTPParam_Text(indexPage.GetVarsHandler()->Get("login"));
+			auto			password = CheckHTTPParam_Text(indexPage.GetVarsHandler()->Get("password"));
+
+			if(login.length() && password.length())
+			{
+				auto		sessid = indexPage.GetSessionHandler()->GetID();
+
+				if(sessid.length() > 5)
+				{
+					auto user_id = GetValueFromDB(Check_isUserExists_sqlquery(login, password), &db);
+					if(user_id.length())
+					{
+						db.Query("UPDATE `sessions` SET "
+									"`expire`=" + to_string(API_SESSION_LEN * 60) + ", "
+									"`user_id`=" + user_id + " " 
+									+ " WHERE `id`=\"" + sessid + "\"");
+						success_message = "\"sessid\":\"" + sessid + "\"";
+					}
+					else
+					{
+						error_message = gettext("user not found");
+						MESSAGE_DEBUG("", action, error_message);
+					}
+				}
+				else
+				{
+					error_message = gettext("session not found");
+					MESSAGE_DEBUG("", action, error_message);
+				}
+
+/*				if(GetValueFromDB("SELECT `id` FROM `users` WHERE `country_code`=" + quoted(country_code) + " AND `phone`=" + quoted(phone_number) + ";", &db).length())
+				{
+					error_message = SendPhoneConfirmationCode(country_code, phone_number, indexPage.SessID_Get_FromHTTP(), &config, &db, &user);
+				}
+				else
+				{
+				}
+*/
+			}
+			else
+			{
+				error_message = gettext("mandatory parameter missed");
+				MESSAGE_ERROR("", action, error_message);
+			}
+
+			AJAX_ResponseTemplate(&indexPage, success_message, error_message);
 
 			MESSAGE_DEBUG("", action, "finish");
 		}

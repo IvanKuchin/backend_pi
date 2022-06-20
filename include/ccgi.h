@@ -100,6 +100,11 @@ class CCgi
 		//out: Files*
 		CFiles*	GetFilesHandler();
 
+		//Return CSession obj
+		//in:
+		//out: Files*
+		CSession*	GetSessionHandler() { return &sessionDB; };
+
 		//Redirect to url
 		//in: const char
 		//out: void
