@@ -176,6 +176,8 @@ auto GenerateSession(string action, c_config *config, CCgi *indexPage, CMysql *d
 
 	// --- internalization settings
 	if(indexPage->GetLanguage() == "ru") locale = LOCALE_RUSSIAN;
+	if(indexPage->GetLanguage() == "en") locale = LOCALE_ENGLISH;
+	if(indexPage->GetLanguage() == "us") locale = LOCALE_ENGLISH;
 	if(SetLocale(locale)) {}
 	else
 	{

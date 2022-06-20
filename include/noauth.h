@@ -6,5 +6,6 @@
 #include "utilities.h"
 #include "utilities_common.h"
 #include "c_smsc.h"
+#include "sql_queries.h"
 
 #endif
