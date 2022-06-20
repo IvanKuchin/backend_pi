@@ -11,7 +11,7 @@
 
 // --- below variable defined in localy.h, 
 // --- which means include must be declared before this block
-#ifndef	FFPMPEG_DISABLE
+#ifndef	FFMPEG_DISABLE
 extern "C"
 {
 #include <libavformat/avformat.h>

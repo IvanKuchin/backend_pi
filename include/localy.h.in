@@ -9,7 +9,7 @@
 #define LOGDIR										"${LOG_DIR}"
 #cmakedefine IMAGEMAGICK_DISABLE
 #cmakedefine MAXMIND_DISABLE
-#cmakedefine FFPMPEG_DISABLE
+#cmakedefine FFMPEG_DISABLE
 
 #define VIDEO_FEED_DIRECTORY 	  					string(IMAGEROOTDIR) + string("/html/video/feed")
 #define IMAGE_DIRECTORY								string(IMAGEROOTDIR) + string("/html/images/")
