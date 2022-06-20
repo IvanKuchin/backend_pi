@@ -205,7 +205,7 @@ bool CVideoConverter::ReadMetadataAndResolution()
 
 	MESSAGE_DEBUG("", "", "start");
 
-#ifndef FFPMPEG_DISABLE
+#ifndef FFMPEG_DISABLE
 
 	AVFormatContext	 *fmt_ctx = NULL;
 	AVDictionaryEntry   *tag = NULL;

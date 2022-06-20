@@ -82,9 +82,8 @@ bool CCgi::isAcceptedLanguage(string lang)
 
 string CCgi::GetLanguage()
 {
-	string	tryLng;
+	auto  tryLng = GetVarsHandler()->Get("lng");
 
-	tryLng = GetVarsHandler()->Get("lng");
 	if(tryLng.empty())
 		tryLng = GetCookie("lng");
 	if(tryLng.empty() && getenv("REMOTE_ADDR"))   /* Flawfinder: ignore */
@@ -100,19 +99,6 @@ string CCgi::GetLanguage()
 
 string CCgi::GetEncoding()
 {
-	string	result, lng;
-
-	lng = GetLanguage();
-
-	if(lng.empty())
-		return "utf-8";
-	if(lng == "ru")
-		return "utf-8";
-	if(lng == "en")
-		return "utf-8";
-
-	MESSAGE_DEBUG("", "", "unknown language (" + lng + ")");
-
 	return "utf-8";
 }
 
