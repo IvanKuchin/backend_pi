@@ -55,10 +55,11 @@ class CCgi
 
 		void	SetVars(CVars &param) 				{ vars = param; };
 
-		bool				SetTemplateFile(const string &fileName);
-		bool				SetTemplate(const string &templ);
 		bool	SetAdminTemplate(const string &templ)		{ return SetTemplate("admin/" + templ); };
 		bool	SetProdTemplate(const string &templ)		{ return SetTemplate("prod/" + templ); };
+
+		bool	SetTemplateFile(const string &fileName);
+		bool	SetTemplate(const string &templ);
 
 		//Render string wich content <<>> tags
 		//in: string

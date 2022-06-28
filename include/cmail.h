@@ -109,6 +109,9 @@ class CMailLocal : public CMail
 		CVars		*vars;
 		string		userLogin, userID;
 
+		string		SetTemplate(string templID);
+		string		SetTemplateFile(string fileName);
+
 	public:
 		void		SetVars(CVars *param)					{ vars = param; }
 		void		SetDB(CMysql *param)					{ db = param; }
@@ -123,9 +126,8 @@ class CMailLocal : public CMail
 		string		GetUserID()						const	{ return userID;}
 		string		GetUserLng();
 
-
-		string		SetTemplate(string templID);
-		string		SetTemplateFile(string fileName);
+		string		SetAdminTemplate(const string &templ)		{ return SetTemplate("admin/" + templ); };
+		string		SetProdTemplate(const string &templ)		{ return SetTemplate("prod/" + templ); };
 
 		// mainly usage function.
 		void		Send(string login, string templID, CVars *, CMysql *);

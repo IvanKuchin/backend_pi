@@ -547,7 +547,7 @@ void CMailLocal::SendToEmail(string email, string login, string templID, CVars *
 	UserLogin(login);
 	SetVars(v);
 
-	templ.SetFile(SetTemplate(templID));
+	templ.SetFile(SetProdTemplate(templID));
 	templ.SetVars(vars);
 	message = templ.Render();
 
