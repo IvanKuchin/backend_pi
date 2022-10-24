@@ -74,6 +74,7 @@ auto RemoveOldCaptcha()
 	else
 	{
 		/* could not open directory */
+		MESSAGE_ERROR("", "", "can't open captcha folder(" + dirName + ")");
 		result = false;
 	}
 
@@ -229,14 +230,14 @@ int main()
 		}
 
 		//--- start of daily cron main functionality
-		CleanupActivators(&db);
-		CleanupRemovedSessions(&db);
+		if(CleanupActivators(&db)		== false) MESSAGE_ERROR("", "", "fail to clean-up activators");
+		if(CleanupRemovedSessions(&db)	== false) MESSAGE_ERROR("", "", "fail to clean-up sessions");
 
 		//--- Remove temporarily media files
-		RemoveTempMedia(&db);
+		if(RemoveTempMedia(&db)			== false) MESSAGE_ERROR("", "", "fail to clean-up temp media");
 
 		//--- Remove old captcha
-		RemoveOldCaptcha();
+		if(RemoveOldCaptcha() 			== false) MESSAGE_ERROR("", "", "fail to clean-up captchas");
 
 		// --- helpdesk tickets management
 		if((error_message = MoveQuietCasesTo_ClosePending_State(&db))	.length()) MESSAGE_ERROR("", "", error_message);
