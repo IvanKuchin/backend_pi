@@ -44,6 +44,7 @@ set(JOINT_LIBRARY_SRCs
     )
 # ---- list of independent libraries
 set(INDEPENDENT_LIBRARIES_SRC
+    c_captcha.cpp
     c_archive.cpp
     c_price_spelling.cpp
     cvideoconverter.cpp
