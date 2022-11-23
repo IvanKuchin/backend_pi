@@ -17,9 +17,11 @@ categories:
       - 'documentation'
       - 'code refinement'
   - title: '🏎 Performance'
-    label: 'performance'
+    labels: 
+      - 'performance'
   - title: 'Security'
-    label: 'security'
+    labels: 
+      - 'security'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 version-resolver:
   major:
