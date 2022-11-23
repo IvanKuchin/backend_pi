@@ -10,7 +10,7 @@ categories:
       - 'fix'
       - 'bugfix'
       - 'bug'
-  - title: '� Maintenance'
+  - title: '🧰 Maintenance'
     labels:
       - 'infrastructure'
       - 'automation'
@@ -19,9 +19,6 @@ categories:
   - title: '🏎 Performance'
     labels: 
       - 'performance'
-  - title: '🚑 Security'
-    labels: 
-      - 'security'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 version-resolver:
   major:
@@ -41,7 +38,6 @@ version-resolver:
       - 'code refinement'
       - 'infrastructure'
       - 'performance'
-      - 'security'
   default: patch
 autolabeler:
   - label: 'breaking'
@@ -69,9 +65,6 @@ autolabeler:
   - label: 'performance'
     title:
       - '/perf/i'
-  - label: 'security'
-    title:
-      - '/security/i'
 template: |
   # Changelog ...
   $CHANGES
