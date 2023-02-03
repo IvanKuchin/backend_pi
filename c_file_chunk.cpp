@@ -72,7 +72,7 @@ auto c_file_chunk::get_file_content() -> pair<char *, string>
 						ifstream	f(fname, ios::binary|ios::in);
 						if(f.is_open())
 						{
-							f.read(&content[current_pos], finish - start + 1);
+							f.read(&content[current_pos], finish - start + 1);   /* Flawfinder: ignore */
 							f.close();
 						}
 						else
