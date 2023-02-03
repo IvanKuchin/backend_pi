@@ -23,25 +23,6 @@
 // ......
 // ------WebKitFormBoundarydt825G9wbuSO99vt--
 
-static vector<string> split(const string& s, const char& c)
-{
-	string buff{""};
-	vector<string> v;
-
-	for(auto n:s)
-	{
-		if(n != c) buff+=n;
-		else if(n == c && buff != "")
-		{
-			v.push_back(buff);
-			buff = "";
-		}
-	}
-	if(buff.length()) v.push_back(buff);
-
-	return v;
-}
-
 CURLMethod::CURLMethod() : paramCount(0)
 {
 }
@@ -76,7 +57,7 @@ CPost::CPost()
 	blocksReadFromSocket = fread(queryString, contentLength, 1, stdin);
 	if(blocksReadFromSocket != static_cast<size_t>(1))
 	{
-		MESSAGE_ERROR("", "", "partial read from socket (waited 1 block with " + to_string(contentLength) + " bytes, read " + to_string(blocksReadFromSocket) + " blocks)")
+		MESSAGE_ERROR("", "", "partial read from socket (expected single block of " + to_string(contentLength) + " bytes, but received " + to_string(blocksReadFromSocket) + " bytes)")
 	}
 	queryString[contentLength] = 0;
 
@@ -141,9 +122,9 @@ int CPost::CalculateVars()
     // else if(strstr(tmp, "Content-Disposition:") != NULL)
     else if(strstr(tmp, GetBoundaryMarker().c_str()) != NULL)
     {
-		char		*p1, *p2;
+		char		*p1 = NULL; 
+		char		*p2 = queryString;
 
-		p2 = queryString;
 		while(1)
 		{
 			// p1 = Binary_strstr(p2, "Content-Disposition:", contentLength - (p2 - queryString));
@@ -160,8 +141,8 @@ int CPost::CalculateVars()
 
 int CPost::ParamCount()
 {
-    if(paramCount == -1)
-		CalculateVars();
+    if(paramCount == -1) CalculateVars();
+
     return paramCount;
 }
 
@@ -289,81 +270,66 @@ string	CPost::GetBoundaryMarker()
 	return boundaryMarker;
 }
 
-bool CPost::isFileName(int number)
+bool CPost::isFileChunk()
 {
-	bool	result = false;
-	char	*tmp;
-	int	i = 0;
+	// --- Parse below HTTP-header field
+	// --- Note: chunk is not part-specific, it is assigned to the whole HTTP-request
+	// ..........
+    // Content-Range: bytes 0-1048575/2097152
+	// ..........
 
-	if(!isContentMultipart()) { return false; }
+	MESSAGE_DEBUG("", "", "start");
 
-	tmp = queryString;
-	if(strstr(tmp, "Content-Disposition:") != NULL)
-	{
-		string		postData, dataVar;
+	auto	env = getenv("HTTP_CONTENT_RANGE");      /* Flawfinder: ignore */
+	string	cr = (env ? env : "");
+	auto	result = cr.length() > 0;
 
-		char		*currPos, *p1, *p2;
+	if(cr.length()) {
+		MESSAGE_DEBUG("", "", "HTTP_CONTENT_RANGE: " + cr);
 
-		i = 0;
+		regex	e("[^\\d]+(\\d+)-(\\d+)/(\\d+)");
+		smatch	sm;
 
-		currPos = queryString;
-		while(1)
+		if(regex_match(cr, sm, e)) 
 		{
-			p1 = Binary_strstr(currPos, "Content-Disposition:", contentLength - (currPos - queryString));
-			if(p1 == NULL) break;
-			p2 = Binary_strstr(p1, "\n", contentLength - (p1 - queryString));
-			i++;
-
-			if(i == number)
-			{
-				if(Binary_strstr(p1, "filename=", p2 - p1 - 1) != NULL)
-					result = true;
-			}
-
-			currPos = p1 + 1;
+			chunkStart  = sm[1].str();
+			chunkFinish = sm[2].str();
+			fileSize    = sm[3].str();
 		}
-
-/*		postData = queryString;
-
-		while(1)
+		else
 		{
-			p1 = postData.find("Content-Disposition:", p2);
-			if(p1 == string::npos) break;
-			p2 = postData.find("\n", p1);
-			i++;
-
-			if(i == number)
-			{
-				dataVar = postData.substr(p1, p2 - p1 - 1);
-				if(dataVar.find("filename=") != string::npos)
-					result = true;
-			}
-
+			MESSAGE_ERROR("", "", "regex can't parse HTTP_CONTENT_RANGE (" + cr + ")");
 		}
-*/
 	}
+
+	MESSAGE_DEBUG("", "", "finish(" + to_string(result) + ")")
+	return result;
+}
+
+bool CPost::isFile(int number)
+{
+	MESSAGE_DEBUG("", "", "start(" + to_string(number) + ")");
+
+	auto fname = GetFileName(number);
+	auto result = fname.length() > 0;
+
+	MESSAGE_DEBUG("", "", "finish(" + to_string(result) + ")")
 	return result;
 }
 
 string CPost::GetFileName(int number)
 {
-	string	result;
-	char	*tmp;
-	int 	i = 0;
-
 	MESSAGE_DEBUG("", "", "start");
 
-	tmp = queryString;
-	result = "";
+	auto	result = ""s;
+	char	*tmp = queryString;
 
 	if(strstr(tmp, "Content-Disposition:") != NULL)
 	{
-		string		dataVar;
 		char		*currPos, *p1, *p2;
-		string::size_type	beginFileName, endFileName;
-		bool		isFound = false;
+		auto		isFound = false;
+		auto		i = 0;
 
-		i = 0;
 		currPos = queryString;
 
 		while(!isFound)
@@ -376,22 +342,14 @@ string CPost::GetFileName(int number)
 
 			if(i == number)
 			{
-				char		fileName[300];    /* Flawfinder: ignore */
+				string	dataVar(p1, p2 - p1);
+				auto	beginFileName = dataVar.find("filename=\"");
 
-				memset(fileName, 0, sizeof(fileName));
-				if((unsigned int)(p2 - p1 - 1) < sizeof(fileName))
-					memcpy(fileName, p1, p2 - p1 - 1);    /* Flawfinder: ignore */
-				else
-				{
-					MESSAGE_ERROR("", "", "file name too long !");
-					throw CException("file name too long");
-				}
-
-				dataVar = fileName;
-				if((beginFileName = dataVar.find("filename=\"")) == string::npos)
-					break;
+				if(beginFileName == string::npos) break;
 				beginFileName += 10;
-				if((endFileName = dataVar.find("\"", beginFileName)) == string::npos)
+
+				auto	endFileName = dataVar.find("\"", beginFileName);
+				if(endFileName == string::npos)
 					endFileName = dataVar.length();
 				else
 					endFileName--;
@@ -405,39 +363,6 @@ string CPost::GetFileName(int number)
 			currPos = p2;
 		}
 	}
-
-/*	if(strstr(tmp, "Content-Disposition:") != NULL)
-	{
-		string		postData, dataVar;
-		unsigned int	p1, p2 = 0, beginFileName, endFileName;
-
-		i = 0;
-		postData = queryString;
-
-		while(1)
-		{
-			p1 = postData.find("Content-Disposition:", p2);
-			if(p1 == string::npos) break;
-			p2 = postData.find("\n", p1);
-			i++;
-
-			if(i == number)
-			{
-				dataVar = postData.substr(p1, p2 - p1 - 1);
-				if((beginFileName = dataVar.find("filename=\"")) == string::npos)
-					break;
-				beginFileName += 10;
-				if((endFileName = dataVar.find("\"", beginFileName)) == string::npos)
-					endFileName = dataVar.length();
-				else
-					endFileName--;
-
-				result = dataVar.substr(beginFileName, endFileName - beginFileName + 1);
-			}
-
-		}
-	}
-*/
 
 	MESSAGE_DEBUG("", "", "finish (result = " + result + ")");
 
@@ -820,19 +745,23 @@ CRequest::CRequest() : url(NULL)
 {
 }
 
-void CRequest::RegisterURLVariables(CVars *v, CFiles *f)
+string CRequest::RegisterURLVariables(CVars *v, CFiles *f, c_ctx_request *_ctx)
 {
+	auto	error_message = ""s;
     char	*methodType;
+    CPost	*post;
     vars = v;
     files = f;
+    ctx = _ctx;
 
     methodType = getenv("REQUEST_METHOD");   /* Flawfinder: ignore */
 
     if(methodType == NULL)
     {
-        MESSAGE_ERROR("", "", "environment variable REQUEST_METHOD is not set");
+    	error_message = "environment variable REQUEST_METHOD is not set";
+        MESSAGE_ERROR("", "", error_message);
 
-		return;
+		return error_message;
     }
 
     if(strstr(methodType, "GET") != 0)
@@ -845,7 +774,7 @@ void CRequest::RegisterURLVariables(CVars *v, CFiles *f)
     {
     	MESSAGE_DEBUG("", "", "HTTP(S) method POST");
 
-		url = new CPost();
+		url = post = new CPost();
     }
     else if(strstr(methodType, "HEAD") != 0)
     {
@@ -871,11 +800,75 @@ void CRequest::RegisterURLVariables(CVars *v, CFiles *f)
 		char *name = url->ParamName(i);
 		char *value = url->ParamValue(i);
 
-		if(url->isFileName(i))
+		if(url->isFile(i))
 		{
-			MESSAGE_INFO("", "", "HTTP POST parameter #" + to_string(i) + " is filename [" + url->GetFileName(i) + "], size [" + to_string(url->ParamValueSize(i)) + "]");
+			// --- assume HTTP POST in this scope
 
-			files->Add(url->GetFileName(i), value, url->ParamValueSize(i));
+			if(url->isFileChunk()) 
+			{
+				auto	fname = url->GetFileName(i);
+
+				MESSAGE_INFO("", "", "HTTP parameter #" + to_string(i) + " is a chunk of a file [" + fname + "] (start-finish/size: " + post->GetChunkStart() + "-" + post->GetChunkFinish() + "/" + post->GetFileSize() + ")");
+
+				// --- Below variable is just a string that is consistent across all file chunks
+				// --- it might be sessionID or imageTempSet or some other random parameter.
+				// --- ImageTempSet has chosen due to it is already defined at this stage,
+				// --- while sessionID - not yet
+				// --- Filename is not enough to keep uniqness between users, 
+				// --- this is the reason of having additional random string.
+				auto	random_reference = vars->Get("imageTempSet");
+				if(random_reference.length())
+				{
+					MESSAGE_DEBUG("", "", "random_reference: " + random_reference);
+
+					c_file_chunk	chunk(fname, random_reference, ctx);
+					error_message = chunk.save(value, stoi(post->GetChunkStart()), stoi(post->GetChunkFinish()), stoi(post->GetFileSize()));
+
+					if(error_message.empty())
+					{
+						auto	is_full_file = false;
+						tie(is_full_file, error_message) = chunk.is_full_file();
+
+						if(error_message.empty())
+						{
+							if(is_full_file)
+							{
+								char	*content = nullptr;
+
+								tie(content, error_message) = chunk.get_file_content();
+
+								if(error_message.empty())
+								{
+									MESSAGE_INFO("", "", "HTTP parameter #" + to_string(i) + " is a chunked file [" + fname + "], size [" + post->GetFileSize() + "]");
+									files->Add(fname, content, stol(post->GetFileSize()));
+								}
+								else
+								{
+									MESSAGE_DEBUG("", "", error_message);
+								}
+							}
+						}
+						else
+						{
+							MESSAGE_DEBUG("", "", error_message);
+						}
+					}
+					else
+					{
+						MESSAGE_DEBUG("", "", error_message);
+					}
+				}
+				else
+				{
+					error_message = "random_reference must be defined prior to file chunk received";
+					MESSAGE_ERROR("", "", error_message);
+				}
+			}
+			else
+			{
+				MESSAGE_INFO("", "", "HTTP parameter #" + to_string(i) + " is a file [" + url->GetFileName(i) + "], size [" + to_string(url->ParamValueSize(i)) + "]");
+				files->Add(url->GetFileName(i), value, url->ParamValueSize(i));
+			}
 		}
 		else
 		{
@@ -893,6 +886,8 @@ void CRequest::RegisterURLVariables(CVars *v, CFiles *f)
 			if(name != NULL) free(value);
 		}
     }
+
+    return error_message;
 }
 
 string CRequest::WebString(string str)
