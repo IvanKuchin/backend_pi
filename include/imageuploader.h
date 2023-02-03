@@ -23,6 +23,7 @@
 #include "cstatistics.h"
 #include "cvideoconverter.h"
 #include "utilities_common.h"
+#include "c_ctx.h"
 
 #define	MESSAGE_HAVENO_MEDIA			1
 #define	MESSAGE_HAVING_VIDEO 			2

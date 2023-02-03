@@ -14,4 +14,11 @@ inline auto Check_isUserExists_sqlquery(const string &login, const string &pass)
 	);
 }	
 
+inline auto Get_FileChunksByNameAndRandom_sqlquery(const string &name, const string &random_reference) -> string
+{
+	return (
+		"SELECT `id` FROM `temp_file_chunks` WHERE `file_name`=\"" + name + "\" AND `random`=\"" + random_reference + "\""
+		);
+}
+
 #endif

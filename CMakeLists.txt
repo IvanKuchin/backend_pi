@@ -41,6 +41,7 @@ set(JOINT_LIBRARY_SRCs
     utilities_common.cpp
     c_cache_obj.cpp
     c_date_spelling.cpp
+    c_file_chunk.cpp
     )
 # ---- list of independent libraries
 set(INDEPENDENT_LIBRARIES_SRC

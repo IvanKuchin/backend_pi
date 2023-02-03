@@ -1876,7 +1876,7 @@ auto CleanupFilename(string filename) -> string
 {
 	MESSAGE_DEBUG("", "", "start (" + filename + ")");
 
-	auto found = filename.find_first_not_of("."); // --- type derivation;
+	decltype(filename.size()) found;
 
 	while((found = filename.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_-().")) != string::npos)
 	{

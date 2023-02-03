@@ -8,20 +8,27 @@ int GetMessageMedia(string imageTempSet, CMysql *db)
 
 	MESSAGE_DEBUG("", "", "start (imageTempSet = " + imageTempSet + ")");
 
-	if(imageTempSet.length() && db->Query("select `mediaType` from `feed_images` where `tempSet`=\"" + imageTempSet + "\";"))
+	if(imageTempSet.length())
 	{
-		string  mediaType = db->Get(0, "mediaType");
+		if(db->Query("select `mediaType` from `feed_images` where `tempSet`=\"" + imageTempSet + "\";"))
+		{
+			string  mediaType = db->Get(0, "mediaType");
 
-		if(mediaType == "video")
-			result = MESSAGE_HAVING_VIDEO;
-		else if(mediaType == "image")
-			result = MESSAGE_HAVING_IMAGE;
-		else if(mediaType == "youtube_video")
-			result = MESSAGE_HAVING_YOUTUBE_VIDEO;
+			if(mediaType == "video")
+				result = MESSAGE_HAVING_VIDEO;
+			else if(mediaType == "image")
+				result = MESSAGE_HAVING_IMAGE;
+			else if(mediaType == "youtube_video")
+				result = MESSAGE_HAVING_YOUTUBE_VIDEO;
+		}
+		else
+		{
+			MESSAGE_DEBUG("", "", "no media attached to the message");
+		}
 	}
 	else
 	{
-		MESSAGE_DEBUG("", "", "imageTempSet not found or empty");
+		MESSAGE_ERROR("", "", "imageTempSet not found");
 	}
 
 	MESSAGE_DEBUG("", "", "finish (result = " + to_string(result) + ")");
@@ -251,7 +258,7 @@ int main()
 	CCgi			indexPage(EXTERNAL_TEMPLATE);
 	CUser			user;
 	c_config		config(CONFIG_DIR);
-	string			action, partnerID, imageTempSet, messageID;
+	string			action, imageTempSet, messageID;
 	string			messageOwnerType = "";
 	string			messageOwnerID = "";
 	CMysql			db;
@@ -262,7 +269,9 @@ int main()
 									// --- if type == MESSAGE_IMAGE then no videos could be assigned
 	bool			showTemplate = true; // --- trigger displaying or not template at the end of app
 										// --- template renders in 99% cases
-										// --- the only exception is second stage video converting
+										// --- the only exception is the second stage of video converting
+
+	c_ctx			ctx(&db, &user, &indexPage, &config);
 
 	MESSAGE_DEBUG("", "", __FILE__)
 
@@ -274,14 +283,6 @@ int main()
 		
 	try
 	{
-		indexPage.ParseURL();
-
-		if(!indexPage.SetProdTemplate("index.htmlt"))
-		{
-			MESSAGE_ERROR("", "", "template file was missing");
-			throw CException("Template file was missing");
-		}
-
 		if(db.Connect(&config) < 0)
 		{
 			MESSAGE_ERROR("", "", "Can not connect to mysql database");
@@ -289,527 +290,562 @@ int main()
 		}
 
 		indexPage.SetDB(&db);
+		indexPage.SetCtx(&ctx);
+
+		auto			error_message = indexPage.ParseURL();
+
+		if(error_message.empty())
+		{
 
 #ifndef IMAGEMAGICK_DISABLE
-		Magick::InitializeMagick(NULL);
+			Magick::InitializeMagick(NULL);
 #endif
 
-		imageTempSet = indexPage.GetVarsHandler()->Get("imageTempSet");
-		try { // --- validity check
-			imageTempSet = to_string(stol(imageTempSet)); 
-		} catch (...) {
-			imageTempSet = "0";
-		}
-		messageID = indexPage.GetVarsHandler()->Get("messageID");
-		try { // --- validity check
-			messageID = to_string(stol(messageID)); 
-		} catch (...) {
-			messageID = "";
-		}
-
-		{
-			MESSAGE_DEBUG("", "", "imageTempSet = " + imageTempSet + ",messageID = " + messageID);
-		}
-
-		action = CheckHTTPParam_Text(indexPage.GetVarsHandler()->Get("action"));
-		MESSAGE_DEBUG("", "", "action taken from HTTP is " + action);
-
-		// --- generate common parts
-		{
-			// --- it has to be run before session, because session relay upon Apache environment variable
-			if(RegisterInitialVariables(&indexPage, &db, &user)) {}
-			else
-			{
-				MESSAGE_ERROR("", "", "RegisterInitialVariables failed, throwing exception");
-				throw CExceptionHTML("environment variable error");
+			imageTempSet = indexPage.GetVarsHandler()->Get("imageTempSet");
+			try { // --- validity check
+				imageTempSet = to_string(stol(imageTempSet)); 
+			} catch (...) {
+				imageTempSet = "0";
+			}
+			messageID = indexPage.GetVarsHandler()->Get("messageID");
+			try { // --- validity check
+				messageID = to_string(stol(messageID)); 
+			} catch (...) {
+				messageID = "";
 			}
 
-			//------- Generate session
-			action = GenerateSession(action, &config, &indexPage, &db, &user);
-		}
-		// ------------ end generate common parts
+			{
+				MESSAGE_DEBUG("", "", "imageTempSet = " + imageTempSet + ",messageID = " + messageID);
+			}
 
-		MESSAGE_DEBUG("", "", "pre-condition if(action == \"" + action + "\")");
+			action = CheckHTTPParam_Text(indexPage.GetVarsHandler()->Get("action"));
+			MESSAGE_DEBUG("", "", "action taken from HTTP is " + action);
+
+			// --- generate common parts
+			{
+				// --- it has to be run before session, because session relay upon Apache environment variable
+				if(RegisterInitialVariables(&indexPage, &db, &user)) {}
+				else
+				{
+					MESSAGE_ERROR("", "", "RegisterInitialVariables failed, throwing exception");
+					throw CExceptionHTML("environment variable error");
+				}
+
+				//------- Generate session
+				action = GenerateSession(action, &config, &indexPage, &db, &user);
+			}
+			// ------------ end generate common parts
+
+			MESSAGE_DEBUG("", "", "pre-condition if(action == \"" + action + "\")");
 
 
-		if(messageID.length() && (AmIMessageOwner(messageID, &user, &db)))
-		{
-			tie(messageOwnerType, messageOwnerID) = GetMessageOwner(messageID, &user, &db);
+			if(messageID.length() && (AmIMessageOwner(messageID, &user, &db)))
+			{
+				tie(messageOwnerType, messageOwnerID) = GetMessageOwner(messageID, &user, &db);
+			}
+			else
+			{
+				messageOwnerType = "user";
+				messageOwnerID = user.GetID();
+			}
+
+			// --- just scoping
+			{
+				if(messageOwnerType.length() && messageOwnerID.length())
+				{
+					if(indexPage.GetFilesHandler()->Count())
+					{
+						// --- if uploaded file was received in full, not few chunks of a file
+
+						messageMedia = GetMessageMedia(imageTempSet, &db);
+					
+						MESSAGE_DEBUG("", "", "number of files POST'ed = " + to_string(indexPage.GetFilesHandler()->Count()));
+
+						for(auto filesCounter = 0; filesCounter < indexPage.GetFilesHandler()->Count(); filesCounter++)
+						{
+							FILE			*f;
+							auto			folderID = (int)(rand()/(RAND_MAX + 1.0) * stod_noexcept(config.GetFromFile("number_of_folders", "feed"))) + 1;
+							auto			filePrefix = GetRandom(20);
+							string			finalFile, tmpFile2Check, tmpImageJPG, fileName, fileExtension;
+							ostringstream   ost;
+							struct ExifInfo exifInfo;
+							int			 currFileType = FILETYPE_UNDEFINED;
+
+							if(isFilenameImage(indexPage.GetFilesHandler()->GetName(filesCounter))) currFileType = FILETYPE_IMAGE;
+							else if(isFilenameVideo(indexPage.GetFilesHandler()->GetName(filesCounter))) currFileType = FILETYPE_VIDEO;
+
+							if(
+								((currFileType == FILETYPE_IMAGE) && (indexPage.GetFilesHandler()->GetSize(filesCounter) > stod_noexcept(config.GetFromFile("max_file_size", "feed_image")))) 
+								||
+								((currFileType == FILETYPE_VIDEO) && (indexPage.GetFilesHandler()->GetSize(filesCounter) > stod_noexcept(config.GetFromFile("max_file_size", "feed_video"))))
+							  )
+							{
+								ostringstream   ost;
+
+								MESSAGE_ERROR("", "", "feed image file [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] size exceed permitted maximum: " + to_string(indexPage.GetFilesHandler()->GetSize(filesCounter)));
+
+
+								if(filesCounter == 0) ostJSONResult << "[";
+								if(filesCounter  > 0) ostJSONResult << ",";
+								ostJSONResult << "{";
+								ostJSONResult << "\"result\": \"error\",";
+								ostJSONResult << "\"textStatus\": \"file size exceeded\",";
+								ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
+								ostJSONResult << "\"jqXHR\": \"\"";
+								ostJSONResult << "}";
+								if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
+							} // --- if file size exceed
+							else
+							{
+								if( 
+									(currFileType == FILETYPE_IMAGE) 
+									&& 
+									((messageMedia == MESSAGE_HAVENO_MEDIA) || (messageMedia == MESSAGE_HAVING_IMAGE)) 
+								  )
+								{
+									// --- image upload
+									{
+										MESSAGE_DEBUG("", "", "image uploading");
+									}
+									messageMedia = MESSAGE_HAVING_IMAGE;
+
+									//--- check image file existing
+									do
+									{
+										ostringstream   ost;
+										string		  tmp;
+										std::size_t	 foundPos;
+
+										folderID = (int)(rand()/(RAND_MAX + 1.0) * stod_noexcept(config.GetFromFile("number_of_folders", "feed"))) + 1;
+										filePrefix = GetRandom(20);
+										tmp = indexPage.GetFilesHandler()->GetName(filesCounter);
+
+										if((foundPos = tmp.rfind(".")) != string::npos) 
+										{
+											fileExtension = tmp.substr(foundPos, tmp.length() - foundPos);
+										}
+										else
+										{
+											fileExtension = ".jpg";
+										}
+
+										ost.str("");
+										ost << IMAGE_FEED_DIRECTORY << "/" << folderID << "/" << filePrefix << ".jpg";
+										finalFile = ost.str();
+
+										ost.str("");
+										ost << "/tmp/tmp_" << filePrefix << fileExtension;
+										tmpFile2Check = ost.str();
+
+										ost.str("");
+										ost << "/tmp/" << filePrefix << ".jpg";
+										tmpImageJPG = ost.str();
+									} while(isFileExists(finalFile) || isFileExists(tmpFile2Check) || isFileExists(tmpImageJPG));
+
+									MESSAGE_DEBUG("", "", "Save file to /tmp for checking of image validity [" + tmpFile2Check + "]");
+
+									// --- Save file to "/tmp/" for checking of image validity
+									f = fopen(tmpFile2Check.c_str(), "w");   /* Flawfinder: ignore */
+									if(f == NULL)
+									{
+										MESSAGE_ERROR("", "", "writing file:" + tmpFile2Check.c_str());
+
+										throw CExceptionHTML("image file write error", indexPage.GetFilesHandler()->GetName(filesCounter));
+									}
+									fwrite(indexPage.GetFilesHandler()->Get(filesCounter), indexPage.GetFilesHandler()->GetSize(filesCounter), 1, f);
+									fclose(f);
+
+									if(ImageConvertToJpg(tmpFile2Check, tmpImageJPG, exifInfo, &config))
+									{
+										auto	  feed_imagesID = 0;
+
+										MESSAGE_DEBUG("", "", "chosen filename for feed image [" + finalFile + "]");
+
+										CopyFile(tmpImageJPG, finalFile);
+
+										ost.str("");
+										ost << "INSERT INTO `feed_images` set \
+										`tempSet`='" << imageTempSet << "', \
+										`srcType`='" << messageOwnerType << "',  \
+										`userID`='" << messageOwnerID << "',  \
+										`folder`='" << folderID << "', \
+										`filename`='" << filePrefix << ".jpg', "
+										<< "`mediaType`=\"image\", "
+										<< ((exifInfo.DateTime.length() && exifInfo.DateTime != "unknown") ? (string)("`exifDateTime`='") + exifInfo.DateTime + "', " : "")
+										<< "`exifGPSAltitude`='" << ParseGPSAltitude(exifInfo.GPSAltitude) << "', "
+										<< "`exifGPSLatitude`='" << ParseGPSLatitude(exifInfo.GPSLatitude) << "', "
+										<< "`exifGPSLongitude`='" << ParseGPSLongitude(exifInfo.GPSLongitude) << "', "
+										<< "`exifGPSSpeed`='" << ParseGPSSpeed(exifInfo.GPSSpeed) << "', "
+										<< "`exifModel`='" << exifInfo.Model << "', "
+										<< "`exifAuthors`='" << exifInfo.Authors << "', "
+										<< "`exifApertureValue`='" << exifInfo.ApertureValue << "', "
+										<< "`exifBrightnessValue`='" << exifInfo.BrightnessValue << "', "
+										<< "`exifColorSpace`='" << exifInfo.ColorSpace << "', "
+										<< "`exifComponentsConfiguration`='" << exifInfo.ComponentsConfiguration << "', "
+										<< "`exifCompression`='" << exifInfo.Compression << "', "
+										<< "`exifDateTimeDigitized`='" << exifInfo.DateTimeDigitized << "', "
+										<< "`exifDateTimeOriginal`='" << exifInfo.DateTimeOriginal << "', "
+										<< "`exifExifImageLength`='" << exifInfo.ExifImageLength << "', "
+										<< "`exifExifImageWidth`='" << exifInfo.ExifImageWidth << "', "
+										<< "`exifExifOffset`='" << exifInfo.ExifOffset << "', "
+										<< "`exifExifVersion`='" << exifInfo.ExifVersion << "', "
+										<< "`exifExposureBiasValue`='" << exifInfo.ExposureBiasValue << "', "
+										<< "`exifExposureMode`='" << exifInfo.ExposureMode << "', "
+										<< "`exifExposureProgram`='" << exifInfo.ExposureProgram << "', "
+										<< "`exifExposureTime`='" << exifInfo.ExposureTime << "', "
+										<< "`exifFlash`='" << exifInfo.Flash << "', "
+										<< "`exifFlashPixVersion`='" << exifInfo.FlashPixVersion << "', "
+										<< "`exifFNumber`='" << exifInfo.FNumber << "', "
+										<< "`exifFocalLength`='" << exifInfo.FocalLength << "', "
+										<< "`exifFocalLengthIn35mmFilm`='" << exifInfo.FocalLengthIn35mmFilm << "', "
+										<< "`exifGPSDateStamp`='" << exifInfo.GPSDateStamp << "', "
+										<< "`exifGPSDestBearing`='" << exifInfo.GPSDestBearing << "', "
+										<< "`exifGPSDestBearingRef`='" << exifInfo.GPSDestBearingRef << "', "
+										<< "`exifGPSImgDirection`='" << exifInfo.GPSImgDirection << "', "
+										<< "`exifGPSImgDirectionRef`='" << exifInfo.GPSImgDirectionRef << "', "
+										<< "`exifGPSInfo`='" << exifInfo.GPSInfo << "', "
+										<< "`exifGPSTimeStamp`='" << exifInfo.GPSTimeStamp << "', "
+										<< "`exifISOSpeedRatings`='" << exifInfo.ISOSpeedRatings << "', "
+										<< "`exifJPEGInterchangeFormat`='" << exifInfo.JPEGInterchangeFormat << "', "
+										<< "`exifJPEGInterchangeFormatLength`='" << exifInfo.JPEGInterchangeFormatLength << "', "
+										<< "`exifMake`='" << exifInfo.Make << "', "
+										<< "`exifMeteringMode`='" << exifInfo.MeteringMode << "', "
+										<< "`exifOrientation`='" << exifInfo.Orientation << "', "
+										<< "`exifResolutionUnit`='" << exifInfo.ResolutionUnit << "', "
+										<< "`exifSceneCaptureType`='" << exifInfo.SceneCaptureType << "', "
+										<< "`exifSceneType`='" << exifInfo.SceneType << "', "
+										<< "`exifSensingMethod`='" << exifInfo.SensingMethod << "', "
+										<< "`exifShutterSpeedValue`='" << exifInfo.ShutterSpeedValue << "', "
+										<< "`exifSoftware`='" << exifInfo.Software << "', "
+										<< "`exifSubjectArea`='" << exifInfo.SubjectArea << "', "
+										<< "`exifSubSecTimeDigitized`='" << exifInfo.SubSecTimeDigitized << "', "
+										<< "`exifSubSecTimeOriginal`='" << exifInfo.SubSecTimeOriginal << "', "
+										<< "`exifWhiteBalance`='" << exifInfo.WhiteBalance << "', "
+										<< "`exifXResolution`='" << exifInfo.XResolution << "', "
+										<< "`exifYCbCrPositioning`='" << exifInfo.YCbCrPositioning << "', "
+										<< "`exifYResolution`='" << exifInfo.YResolution << "';";
+										feed_imagesID = db.InsertQuery(ost.str());
+
+										if(filesCounter == 0) ostJSONResult << "[";
+										if(filesCounter  > 0) ostJSONResult << ",";
+										if(feed_imagesID)
+										{
+											ostJSONResult << "{";
+											ostJSONResult << "\"result\": \"success\",";
+											ostJSONResult << "\"textStatus\": \"\",";
+											ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
+											ostJSONResult << "\"imageID\": \"" << feed_imagesID << "\" ,";
+											ostJSONResult << "\"mediaType\": \"image\" ,";
+											ostJSONResult << "\"jqXHR\": \"\"";
+											ostJSONResult << "}";
+										}
+										else
+										{
+											MESSAGE_ERROR("", "", "inserting image info into feed_images table");
+
+											ostJSONResult << "{";
+											ostJSONResult << "\"result\": \"error\",";
+											ostJSONResult << "\"textStatus\": \"error inserting into table\",";
+											ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
+											ostJSONResult << "\"imageID\": \"" << feed_imagesID << "\" ,";
+											ostJSONResult << "\"mediaType\": \"image\" ,";
+											ostJSONResult << "\"jqXHR\": \"\"";
+											ostJSONResult << "}";
+										}
+										if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
+
+										// --- Delete temporarily files
+										unlink(tmpFile2Check.c_str());
+										unlink(tmpImageJPG.c_str());
+									}
+									else
+									{
+										MESSAGE_ERROR("", "", "image [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] is not valid format (looks like attack)");
+
+										if(filesCounter == 0) ostJSONResult << "[";
+										if(filesCounter  > 0) ostJSONResult << ",";
+										ostJSONResult << "{";
+										ostJSONResult << "\"result\": \"error\",";
+										ostJSONResult << "\"textStatus\": \"некорректное изображение\",";
+										ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
+										ostJSONResult << "\"jqXHR\": \"\"";
+										ostJSONResult << "}";
+										if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
+									} // --- if image successfully converted and saved to the image folder
+								} // --- if uploaded file image 
+								else if( (messageMedia == MESSAGE_HAVENO_MEDIA) && (currFileType == FILETYPE_VIDEO) )
+								{
+									MESSAGE_DEBUG("", "", "video uploading");
+
+									CVideoConverter	 videoConverter(indexPage.GetFilesHandler()->GetName(filesCounter));
+									
+									messageMedia = MESSAGE_HAVING_VIDEO;
+
+									tmpFile2Check = videoConverter.GetTempFullFilename();
+									tmpImageJPG = videoConverter.GetPreFinalFullFilename(0);
+									finalFile = videoConverter.GetFinalFullFilename(0);
+
+									// --- video upload
+									MESSAGE_DEBUG("", "", "Save file to /tmp for checking of video validity [" + tmpFile2Check + "]");
+
+									// --- Save file to "/tmp/" for checking of video validity
+									f = fopen(tmpFile2Check.c_str(), "w");   /* Flawfinder: ignore */
+									if(f == NULL)
+									{
+										MESSAGE_ERROR("", "", "writing file:" + tmpFile2Check);
+										throw CExceptionHTML("image file write error", indexPage.GetFilesHandler()->GetName(filesCounter));
+									}
+									fwrite(indexPage.GetFilesHandler()->Get(filesCounter), indexPage.GetFilesHandler()->GetSize(filesCounter), 1, f);
+									fclose(f);
+
+									if(videoConverter.FirstPhase())
+									{
+										auto	  feed_mediaID = 0;
+
+										ost.str("");
+										ost << "insert into `feed_images` set "
+											<< "`tempSet`='" << imageTempSet << "', "
+											<< "`srcType`='" << messageOwnerType << "',  "
+											<< "`userID`='" << messageOwnerID << "',  "
+											<< "`folder`='" << videoConverter.GetFinalFolder() << "', "
+											<< "`filename`='" << videoConverter.GetFinalFilename(0) << "',"
+											<< "`exifGPSAltitude`='" << ParseGPSAltitude(videoConverter.GetMetadataLocationAltitude()) << "',"
+											<< "`exifGPSLongitude`='" << ParseGPSLongitude(videoConverter.GetMetadataLocationLongitude()) << "',"
+											<< "`exifGPSLatitude`='" << ParseGPSLatitude(videoConverter.GetMetadataLocationLatitude()) << "',"
+											<< "`exifDateTime`='" << videoConverter.GetMetadataDateTime() << "',"
+											<< "`exifMake`='" << videoConverter.GetMetadataMake() << "',"
+											<< "`exifModel`='" << videoConverter.GetMetadataModel() << "',"
+											<< "`exifSoftware`='" << videoConverter.GetMetadataSW() << "',"
+											<< "`mediaType`=\"video\";";
+										feed_mediaID = db.InsertQuery(ost.str());
+
+										if(filesCounter == 0) ostJSONResult << "[";
+										if(filesCounter  > 0) ostJSONResult << ",";
+										if(feed_mediaID)
+										{
+											pid_t	   forkPID;
+
+											ostJSONResult << "{";
+											ostJSONResult << "\"result\": \"success\",";
+											ostJSONResult << "\"textStatus\": \"\",";
+											ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
+											ostJSONResult << "\"imageID\": \"" << feed_mediaID << "\" ,";
+											ostJSONResult << "\"mediaType\": \"video\" ,";
+											ostJSONResult << "\"jqXHR\": \"\"";
+											ostJSONResult << "}";
+
+
+											// --- fork here
+											// --- parent process: return response to user (to avoid long waiting)
+											// --- child process: continue video converting to webm-format (very long conversion)
+											// --- !!! IMPORTANT !!!
+											// --- no need to add additional functionality here
+											forkPID = fork();
+											if(forkPID == 0)
+											{
+												pid_t	   sid;
+
+												// --- child process
+												{
+													MESSAGE_DEBUG("", "", "child process after fork");
+												}
+												
+												try
+												{
+													{
+														MESSAGE_DEBUG("", "", "daemonize process");
+													}
+													// --- daemonize process
+													// --- this allows apache not to wait until child process finished
+													sid = setsid();
+													if(sid < 0) 
+													{
+														MESSAGE_ERROR("", "", "can't daemonize SecondStageVideoConversion-process setsid returns error [" + to_string(EXIT_FAILURE) + "]");
+
+														// --- it must be caught by "catch" in child process
+														throw;
+													}
+
+													MESSAGE_DEBUG("", "", "redirect stdin/stdout/stderr -> /dev/null");
+
+													// --- Redirect standard files to /dev/null 
+													// --- otherwise apache waits until stdout and stderr will be closed
+													if(!freopen( "/dev/null", "r", stdin))
+													{
+														MESSAGE_ERROR("", "", "redirect error stdin -> /dev/null");
+
+														throw;  
+													} 
+													if(!freopen( "/dev/null", "w", stdout))
+													{
+														MESSAGE_ERROR("", "", "redirect error stdout -> /dev/null");
+
+														throw;  
+													} 
+													if(!freopen( "/dev/null", "w", stderr))
+													{
+														MESSAGE_ERROR("", "", "redirect error stderr -> /dev/null");
+
+														throw;  
+													} 
+													
+
+													showTemplate = false;
+
+													if(videoConverter.SecondPhase())
+													{
+														// --- create new DB-connection, due to parent will close the old one
+														CMysql  db1;		
+
+														if(db1.Connect(&config) < 0)
+														{
+															MESSAGE_ERROR("", "", "Can not connect to mysql database");
+															throw CException("MySql connection");
+														}
+
+														if(db1.Query("SELECT * FROM `feed_images` where `id`=\"" + to_string(feed_mediaID) + "\";"))
+														{
+															ost.str("");
+															ost << "insert into `feed_images` set "
+																<< "`setID`='" << db1.Get(0, "setID") << "', "
+																<< "`tempSet`='" << db1.Get(0, "tempSet") << "', "
+																<< "`srcType`='" << messageOwnerType << "',  "
+																<< "`userID`='" << messageOwnerID << "',  "
+																<< "`folder`='" << videoConverter.GetFinalFolder() << "', "
+																<< "`filename`='" << videoConverter.GetFinalFilename(1) << "',"
+																<< "`exifGPSAltitude`='" << ParseGPSAltitude(videoConverter.GetMetadataLocationAltitude()) << "',"
+																<< "`exifGPSLongitude`='" << ParseGPSLongitude(videoConverter.GetMetadataLocationLongitude()) << "',"
+																<< "`exifGPSLatitude`='" << ParseGPSLatitude(videoConverter.GetMetadataLocationLatitude()) << "',"
+																<< "`exifDateTime`='" << videoConverter.GetMetadataDateTime() << "',"
+																<< "`exifMake`='" << videoConverter.GetMetadataMake() << "',"
+																<< "`exifModel`='" << videoConverter.GetMetadataModel() << "',"
+																<< "`exifSoftware`='" << videoConverter.GetMetadataSW() << "',"
+																<< "`mediaType`=\"video\";";
+															feed_mediaID = db1.InsertQuery(ost.str());
+														}
+														else
+														{
+															MESSAGE_DEBUG("", "", "remove newly converted video [" + videoConverter.GetFinalFullFilename(1) + "] because user canceled message submission");
+															
+															unlink(videoConverter.GetFinalFullFilename(1).c_str());
+														}
+
+														videoConverter.Cleanup();
+													}
+													else
+													{
+														MESSAGE_ERROR("", "", "2-st phase failed, video [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] hasn't been converted");
+													}
+
+												}
+												catch(...)
+												{
+													MESSAGE_DEBUG("", "", "exception caught in SecondStageVideoConverting-process, can't handle it, just exit");
+
+													exit(1);
+												}
+
+												// --- exit from video converting here.
+												// --- if continue many things can be broken, 
+												// --- parent process already close and clear all structures
+												MESSAGE_DEBUG("", "", "exit from child process");
+
+												exit(0);
+											}
+
+											MESSAGE_DEBUG("", "", "parent process after fork");
+										}
+										else
+										{
+											error_message = gettext("SQL syntax error");
+											MESSAGE_ERROR("", "", error_message);
+
+											ostJSONResult << "{";
+											ostJSONResult << "\"result\": \"error\",";
+											ostJSONResult << "\"textStatus\":" << quoted(error_message);
+											ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
+											ostJSONResult << "\"imageID\": \"" << feed_mediaID << "\" ,";
+											ostJSONResult << "\"mediaType\": \"video\" ,";
+											ostJSONResult << "\"jqXHR\": \"\"";
+											ostJSONResult << "}";
+										}
+										if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
+									}
+									else
+									{
+										MESSAGE_ERROR("", "", "1-st phase failed, video [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] is not valid format")
+
+										if(filesCounter == 0) ostJSONResult << "[";
+										if(filesCounter  > 0) ostJSONResult << ",";
+										ostJSONResult << "{";
+										ostJSONResult << "\"result\": \"error\",";
+										ostJSONResult << "\"textStatus\": \"некорректное изображение\",";
+										ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
+										ostJSONResult << "\"jqXHR\": \"\"";
+										ostJSONResult << "}";
+										if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
+									}
+								} // --- if uploaded file video
+								else
+								{
+									{
+										if(currFileType == FILETYPE_UNDEFINED) 
+										{
+											MESSAGE_ERROR("", "", "file type (" + indexPage.GetFilesHandler()->GetName(filesCounter) + "): undefined");
+										}
+										else 
+										{
+											MESSAGE_DEBUG("", "", "video and images can't be mixed in a single message  or  more than one video file uploaded");
+										}
+									}
+
+									if(filesCounter == 0) ostJSONResult << "[";
+									if(filesCounter  > 0) ostJSONResult << ",";
+									ostJSONResult << "{";
+									ostJSONResult << "\"result\": \"error\",";
+									ostJSONResult << "\"textStatus\": \"<br>картинки, видео, youtube видео - не могут быть в одном сообщении<br>в одном сообщении не может быть больше одного видео\",";
+									ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
+									ostJSONResult << "\"jqXHR\": \"\"";
+									ostJSONResult << "}";
+									if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
+								}  // --- if uploaded file neither image nor video
+							} // --- if file size acceptable
+						} // --- Loop through all uploaded files
+					}
+					else
+					{
+						MESSAGE_DEBUG("", "", "there was uploaded chunk of a file")
+
+						ostJSONResult.str("");
+						ostJSONResult <<	"[{"
+											"\"result\" : \"partial\","
+											"\"textStatus\" : \"Chunk of a file was received\""
+											"}]";
+					}
+				}
+				else
+				{
+					MESSAGE_ERROR("", "", "message owner error (type:" + messageOwnerType + ", id:" + messageOwnerID + ")")
+
+					ostJSONResult.str("");
+					ostJSONResult <<	"[{"
+										"\"result\" : \"error\","
+										"\"fileName\" : \"\","
+										"\"textStatus\" : \"Ошибка: Не получилось определить владельца сообщения\""
+										"}]";
+				}
+			}
 		}
 		else
 		{
-			messageOwnerType = "user";
-			messageOwnerID = user.GetID();
-		}
+			MESSAGE_ERROR("", "", "error while parsing HTTP parameters")
 
-		// --- just scoping
-		{
-			if(messageOwnerType.length() && messageOwnerID.length())
-			{
-				messageMedia = GetMessageMedia(imageTempSet, &db);
-			
-				MESSAGE_DEBUG("", "", "number of files POST'ed = " + to_string(indexPage.GetFilesHandler()->Count()));
-
-				for(auto filesCounter = 0; filesCounter < indexPage.GetFilesHandler()->Count(); filesCounter++)
-				{
-					FILE			*f;
-					auto			folderID = (int)(rand()/(RAND_MAX + 1.0) * stod_noexcept(config.GetFromFile("number_of_folders", "feed"))) + 1;
-					auto			filePrefix = GetRandom(20);
-					string			finalFile, tmpFile2Check, tmpImageJPG, fileName, fileExtension;
-					ostringstream   ost;
-					struct ExifInfo exifInfo;
-					int			 currFileType = FILETYPE_UNDEFINED;
-
-					if(isFilenameImage(indexPage.GetFilesHandler()->GetName(filesCounter))) currFileType = FILETYPE_IMAGE;
-					else if(isFilenameVideo(indexPage.GetFilesHandler()->GetName(filesCounter))) currFileType = FILETYPE_VIDEO;
-
-					if(
-						((currFileType == FILETYPE_IMAGE) && (indexPage.GetFilesHandler()->GetSize(filesCounter) > stod_noexcept(config.GetFromFile("max_file_size", "feed_image")))) 
-						||
-						((currFileType == FILETYPE_VIDEO) && (indexPage.GetFilesHandler()->GetSize(filesCounter) > stod_noexcept(config.GetFromFile("max_file_size", "feed_video"))))
-					  )
-					{
-						ostringstream   ost;
-
-						MESSAGE_ERROR("", "", "feed image file [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] size exceed permitted maximum: " + to_string(indexPage.GetFilesHandler()->GetSize(filesCounter)));
-
-
-						if(filesCounter == 0) ostJSONResult << "[" << std::endl;
-						if(filesCounter  > 0) ostJSONResult << ",";
-						ostJSONResult << "{" << std::endl;
-						ostJSONResult << "\"result\": \"error\"," << std::endl;
-						ostJSONResult << "\"textStatus\": \"file size exceeded\"," << std::endl;
-						ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ," << std::endl;
-						ostJSONResult << "\"jqXHR\": \"\"" << std::endl;
-						ostJSONResult << "}" << std::endl;
-						if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
-					} // --- if file size exceed
-					else
-					{
-						if( 
-							(currFileType == FILETYPE_IMAGE) 
-							&& 
-							((messageMedia == MESSAGE_HAVENO_MEDIA) || (messageMedia == MESSAGE_HAVING_IMAGE)) 
-						  )
-						{
-							// --- image upload
-							{
-								MESSAGE_DEBUG("", "", "image uploading");
-							}
-							messageMedia = MESSAGE_HAVING_IMAGE;
-
-							//--- check image file existing
-							do
-							{
-								ostringstream   ost;
-								string		  tmp;
-								std::size_t	 foundPos;
-
-								folderID = (int)(rand()/(RAND_MAX + 1.0) * stod_noexcept(config.GetFromFile("number_of_folders", "feed"))) + 1;
-								filePrefix = GetRandom(20);
-								tmp = indexPage.GetFilesHandler()->GetName(filesCounter);
-
-								if((foundPos = tmp.rfind(".")) != string::npos) 
-								{
-									fileExtension = tmp.substr(foundPos, tmp.length() - foundPos);
-								}
-								else
-								{
-									fileExtension = ".jpg";
-								}
-
-								ost.str("");
-								ost << IMAGE_FEED_DIRECTORY << "/" << folderID << "/" << filePrefix << ".jpg";
-								finalFile = ost.str();
-
-								ost.str("");
-								ost << "/tmp/tmp_" << filePrefix << fileExtension;
-								tmpFile2Check = ost.str();
-
-								ost.str("");
-								ost << "/tmp/" << filePrefix << ".jpg";
-								tmpImageJPG = ost.str();
-							} while(isFileExists(finalFile) || isFileExists(tmpFile2Check) || isFileExists(tmpImageJPG));
-
-							MESSAGE_DEBUG("", "", "Save file to /tmp for checking of image validity [" + tmpFile2Check + "]");
-
-							// --- Save file to "/tmp/" for checking of image validity
-							f = fopen(tmpFile2Check.c_str(), "w");   /* Flawfinder: ignore */
-							if(f == NULL)
-							{
-								MESSAGE_ERROR("", "", "writing file:" + tmpFile2Check.c_str());
-
-								throw CExceptionHTML("image file write error", indexPage.GetFilesHandler()->GetName(filesCounter));
-							}
-							fwrite(indexPage.GetFilesHandler()->Get(filesCounter), indexPage.GetFilesHandler()->GetSize(filesCounter), 1, f);
-							fclose(f);
-
-							if(ImageConvertToJpg(tmpFile2Check, tmpImageJPG, exifInfo, &config))
-							{
-								auto	  feed_imagesID = 0;
-
-								MESSAGE_DEBUG("", "", "chosen filename for feed image [" + finalFile + "]");
-
-								CopyFile(tmpImageJPG, finalFile);
-
-								ost.str("");
-								ost << "INSERT INTO `feed_images` set \
-								`tempSet`='" << imageTempSet << "', \
-								`srcType`='" << messageOwnerType << "',  \
-								`userID`='" << messageOwnerID << "',  \
-								`folder`='" << folderID << "', \
-								`filename`='" << filePrefix << ".jpg', "
-								<< "`mediaType`=\"image\", "
-								<< ((exifInfo.DateTime.length() && exifInfo.DateTime != "unknown") ? (string)("`exifDateTime`='") + exifInfo.DateTime + "', " : "")
-								<< "`exifGPSAltitude`='" << ParseGPSAltitude(exifInfo.GPSAltitude) << "', "
-								<< "`exifGPSLatitude`='" << ParseGPSLatitude(exifInfo.GPSLatitude) << "', "
-								<< "`exifGPSLongitude`='" << ParseGPSLongitude(exifInfo.GPSLongitude) << "', "
-								<< "`exifGPSSpeed`='" << ParseGPSSpeed(exifInfo.GPSSpeed) << "', "
-								<< "`exifModel`='" << exifInfo.Model << "', "
-								<< "`exifAuthors`='" << exifInfo.Authors << "', "
-								<< "`exifApertureValue`='" << exifInfo.ApertureValue << "', "
-								<< "`exifBrightnessValue`='" << exifInfo.BrightnessValue << "', "
-								<< "`exifColorSpace`='" << exifInfo.ColorSpace << "', "
-								<< "`exifComponentsConfiguration`='" << exifInfo.ComponentsConfiguration << "', "
-								<< "`exifCompression`='" << exifInfo.Compression << "', "
-								<< "`exifDateTimeDigitized`='" << exifInfo.DateTimeDigitized << "', "
-								<< "`exifDateTimeOriginal`='" << exifInfo.DateTimeOriginal << "', "
-								<< "`exifExifImageLength`='" << exifInfo.ExifImageLength << "', "
-								<< "`exifExifImageWidth`='" << exifInfo.ExifImageWidth << "', "
-								<< "`exifExifOffset`='" << exifInfo.ExifOffset << "', "
-								<< "`exifExifVersion`='" << exifInfo.ExifVersion << "', "
-								<< "`exifExposureBiasValue`='" << exifInfo.ExposureBiasValue << "', "
-								<< "`exifExposureMode`='" << exifInfo.ExposureMode << "', "
-								<< "`exifExposureProgram`='" << exifInfo.ExposureProgram << "', "
-								<< "`exifExposureTime`='" << exifInfo.ExposureTime << "', "
-								<< "`exifFlash`='" << exifInfo.Flash << "', "
-								<< "`exifFlashPixVersion`='" << exifInfo.FlashPixVersion << "', "
-								<< "`exifFNumber`='" << exifInfo.FNumber << "', "
-								<< "`exifFocalLength`='" << exifInfo.FocalLength << "', "
-								<< "`exifFocalLengthIn35mmFilm`='" << exifInfo.FocalLengthIn35mmFilm << "', "
-								<< "`exifGPSDateStamp`='" << exifInfo.GPSDateStamp << "', "
-								<< "`exifGPSDestBearing`='" << exifInfo.GPSDestBearing << "', "
-								<< "`exifGPSDestBearingRef`='" << exifInfo.GPSDestBearingRef << "', "
-								<< "`exifGPSImgDirection`='" << exifInfo.GPSImgDirection << "', "
-								<< "`exifGPSImgDirectionRef`='" << exifInfo.GPSImgDirectionRef << "', "
-								<< "`exifGPSInfo`='" << exifInfo.GPSInfo << "', "
-								<< "`exifGPSTimeStamp`='" << exifInfo.GPSTimeStamp << "', "
-								<< "`exifISOSpeedRatings`='" << exifInfo.ISOSpeedRatings << "', "
-								<< "`exifJPEGInterchangeFormat`='" << exifInfo.JPEGInterchangeFormat << "', "
-								<< "`exifJPEGInterchangeFormatLength`='" << exifInfo.JPEGInterchangeFormatLength << "', "
-								<< "`exifMake`='" << exifInfo.Make << "', "
-								<< "`exifMeteringMode`='" << exifInfo.MeteringMode << "', "
-								<< "`exifOrientation`='" << exifInfo.Orientation << "', "
-								<< "`exifResolutionUnit`='" << exifInfo.ResolutionUnit << "', "
-								<< "`exifSceneCaptureType`='" << exifInfo.SceneCaptureType << "', "
-								<< "`exifSceneType`='" << exifInfo.SceneType << "', "
-								<< "`exifSensingMethod`='" << exifInfo.SensingMethod << "', "
-								<< "`exifShutterSpeedValue`='" << exifInfo.ShutterSpeedValue << "', "
-								<< "`exifSoftware`='" << exifInfo.Software << "', "
-								<< "`exifSubjectArea`='" << exifInfo.SubjectArea << "', "
-								<< "`exifSubSecTimeDigitized`='" << exifInfo.SubSecTimeDigitized << "', "
-								<< "`exifSubSecTimeOriginal`='" << exifInfo.SubSecTimeOriginal << "', "
-								<< "`exifWhiteBalance`='" << exifInfo.WhiteBalance << "', "
-								<< "`exifXResolution`='" << exifInfo.XResolution << "', "
-								<< "`exifYCbCrPositioning`='" << exifInfo.YCbCrPositioning << "', "
-								<< "`exifYResolution`='" << exifInfo.YResolution << "';";
-								feed_imagesID = db.InsertQuery(ost.str());
-
-								if(filesCounter == 0) ostJSONResult << "[" << std::endl;
-								if(filesCounter  > 0) ostJSONResult << ",";
-								if(feed_imagesID)
-								{
-									ostJSONResult << "{" << std::endl;
-									ostJSONResult << "\"result\": \"success\"," << std::endl;
-									ostJSONResult << "\"textStatus\": \"\"," << std::endl;
-									ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ," << std::endl;
-									ostJSONResult << "\"imageID\": \"" << feed_imagesID << "\" ," << std::endl;
-									ostJSONResult << "\"mediaType\": \"image\" ," << std::endl;
-									ostJSONResult << "\"jqXHR\": \"\"" << std::endl;
-									ostJSONResult << "}" << std::endl;
-								}
-								else
-								{
-									MESSAGE_ERROR("", "", "inserting image info into feed_images table");
-
-									ostJSONResult << "{" << std::endl;
-									ostJSONResult << "\"result\": \"error\"," << std::endl;
-									ostJSONResult << "\"textStatus\": \"error inserting into table\"," << std::endl;
-									ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ," << std::endl;
-									ostJSONResult << "\"imageID\": \"" << feed_imagesID << "\" ," << std::endl;
-									ostJSONResult << "\"mediaType\": \"image\" ," << std::endl;
-									ostJSONResult << "\"jqXHR\": \"\"" << std::endl;
-									ostJSONResult << "}" << std::endl;
-								}
-								if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
-
-								// --- Delete temporarily files
-								unlink(tmpFile2Check.c_str());
-								unlink(tmpImageJPG.c_str());
-							}
-							else
-							{
-								MESSAGE_ERROR("", "", "image [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] is not valid format (looks like attack)");
-
-								if(filesCounter == 0) ostJSONResult << "[" << std::endl;
-								if(filesCounter  > 0) ostJSONResult << ",";
-								ostJSONResult << "{" << std::endl;
-								ostJSONResult << "\"result\": \"error\"," << std::endl;
-								ostJSONResult << "\"textStatus\": \"некорректное изображение\"," << std::endl;
-								ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ," << std::endl;
-								ostJSONResult << "\"jqXHR\": \"\"" << std::endl;
-								ostJSONResult << "}" << std::endl;
-								if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
-							} // --- if image successfully converted and saved to image folder
-						} // --- if uploaded file image 
-						else if( (messageMedia == MESSAGE_HAVENO_MEDIA) && (currFileType == FILETYPE_VIDEO) )
-						{
-							MESSAGE_DEBUG("", "", "video uploading");
-
-							CVideoConverter	 videoConverter(indexPage.GetFilesHandler()->GetName(filesCounter));
-							
-							messageMedia = MESSAGE_HAVING_VIDEO;
-
-							tmpFile2Check = videoConverter.GetTempFullFilename();
-							tmpImageJPG = videoConverter.GetPreFinalFullFilename(0);
-							finalFile = videoConverter.GetFinalFullFilename(0);
-
-							// --- video upload
-							MESSAGE_DEBUG("", "", "Save file to /tmp for checking of video validity [" + tmpFile2Check + "]");
-
-							// --- Save file to "/tmp/" for checking of video validity
-							f = fopen(tmpFile2Check.c_str(), "w");   /* Flawfinder: ignore */
-							if(f == NULL)
-							{
-								MESSAGE_ERROR("", "", "writing file:" + tmpFile2Check);
-								throw CExceptionHTML("image file write error", indexPage.GetFilesHandler()->GetName(filesCounter));
-							}
-							fwrite(indexPage.GetFilesHandler()->Get(filesCounter), indexPage.GetFilesHandler()->GetSize(filesCounter), 1, f);
-							fclose(f);
-
-							if(videoConverter.FirstPhase())
-							{
-								auto	  feed_mediaID = 0;
-
-								ost.str("");
-								ost << "insert into `feed_images` set "
-									<< "`tempSet`='" << imageTempSet << "', "
-									<< "`srcType`='" << messageOwnerType << "',  "
-									<< "`userID`='" << messageOwnerID << "',  "
-									<< "`folder`='" << videoConverter.GetFinalFolder() << "', "
-									<< "`filename`='" << videoConverter.GetFinalFilename(0) << "',"
-									<< "`exifGPSAltitude`='" << ParseGPSAltitude(videoConverter.GetMetadataLocationAltitude()) << "',"
-									<< "`exifGPSLongitude`='" << ParseGPSLongitude(videoConverter.GetMetadataLocationLongitude()) << "',"
-									<< "`exifGPSLatitude`='" << ParseGPSLatitude(videoConverter.GetMetadataLocationLatitude()) << "',"
-									<< "`exifDateTime`='" << videoConverter.GetMetadataDateTime() << "',"
-									<< "`exifMake`='" << videoConverter.GetMetadataMake() << "',"
-									<< "`exifModel`='" << videoConverter.GetMetadataModel() << "',"
-									<< "`exifSoftware`='" << videoConverter.GetMetadataSW() << "',"
-									<< "`mediaType`=\"video\";";
-								feed_mediaID = db.InsertQuery(ost.str());
-
-								if(filesCounter == 0) ostJSONResult << "[" << std::endl;
-								if(filesCounter  > 0) ostJSONResult << ",";
-								if(feed_mediaID)
-								{
-									pid_t	   forkPID;
-
-									ostJSONResult << "{";
-									ostJSONResult << "\"result\": \"success\",";
-									ostJSONResult << "\"textStatus\": \"\",";
-									ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
-									ostJSONResult << "\"imageID\": \"" << feed_mediaID << "\" ,";
-									ostJSONResult << "\"mediaType\": \"video\" ,";
-									ostJSONResult << "\"jqXHR\": \"\"";
-									ostJSONResult << "}";
-
-
-									// --- fork here
-									// --- parent process: return response to user (to avoid long waiting)
-									// --- child process: continue video converting to webm-format (very long conversion)
-									// --- !!! IMPORTANT !!!
-									// --- no need to add additional functionality here
-									forkPID = fork();
-									if(forkPID == 0)
-									{
-										pid_t	   sid;
-
-										// --- child process
-										{
-											MESSAGE_DEBUG("", "", "child process after fork");
-										}
-										
-										try
-										{
-											{
-												MESSAGE_DEBUG("", "", "daemonize process");
-											}
-											// --- daemonize process
-											// --- this allows apache not to wait until child process finished
-											sid = setsid();
-											if(sid < 0) 
-											{
-												MESSAGE_ERROR("", "", "can't daemonize SecondStageVideoConversion-process setsid returns error [" + to_string(EXIT_FAILURE) + "]");
-
-												// --- it must be caught by "catch" in child process
-												throw;
-											}
-
-											MESSAGE_DEBUG("", "", "redirect stdin/stdout/stderr -> /dev/null");
-
-											// --- Redirect standard files to /dev/null 
-											// --- otherwise apache waits until stdout and stderr will be closed
-											if(!freopen( "/dev/null", "r", stdin))
-											{
-												MESSAGE_ERROR("", "", "redirect error stdin -> /dev/null");
-
-												throw;  
-											} 
-											if(!freopen( "/dev/null", "w", stdout))
-											{
-												MESSAGE_ERROR("", "", "redirect error stdout -> /dev/null");
-
-												throw;  
-											} 
-											if(!freopen( "/dev/null", "w", stderr))
-											{
-												MESSAGE_ERROR("", "", "redirect error stderr -> /dev/null");
-
-												throw;  
-											} 
-											
-
-											showTemplate = false;
-
-											if(videoConverter.SecondPhase())
-											{
-												// --- create new DB-connection, due to parent will close the old one
-												CMysql  db1;		
-
-												if(db1.Connect(&config) < 0)
-												{
-													MESSAGE_ERROR("", "", "Can not connect to mysql database");
-													throw CException("MySql connection");
-												}
-
-												if(db1.Query("SELECT * FROM `feed_images` where `id`=\"" + to_string(feed_mediaID) + "\";"))
-												{
-													ost.str("");
-													ost << "insert into `feed_images` set "
-														<< "`setID`='" << db1.Get(0, "setID") << "', "
-														<< "`tempSet`='" << db1.Get(0, "tempSet") << "', "
-														<< "`srcType`='" << messageOwnerType << "',  "
-														<< "`userID`='" << messageOwnerID << "',  "
-														<< "`folder`='" << videoConverter.GetFinalFolder() << "', "
-														<< "`filename`='" << videoConverter.GetFinalFilename(1) << "',"
-														<< "`exifGPSAltitude`='" << ParseGPSAltitude(videoConverter.GetMetadataLocationAltitude()) << "',"
-														<< "`exifGPSLongitude`='" << ParseGPSLongitude(videoConverter.GetMetadataLocationLongitude()) << "',"
-														<< "`exifGPSLatitude`='" << ParseGPSLatitude(videoConverter.GetMetadataLocationLatitude()) << "',"
-														<< "`exifDateTime`='" << videoConverter.GetMetadataDateTime() << "',"
-														<< "`exifMake`='" << videoConverter.GetMetadataMake() << "',"
-														<< "`exifModel`='" << videoConverter.GetMetadataModel() << "',"
-														<< "`exifSoftware`='" << videoConverter.GetMetadataSW() << "',"
-														<< "`mediaType`=\"video\";";
-													feed_mediaID = db1.InsertQuery(ost.str());
-												}
-												else
-												{
-													MESSAGE_DEBUG("", "", "remove newly converted video [" + videoConverter.GetFinalFullFilename(1) + "] because user canceled message submission");
-													
-													unlink(videoConverter.GetFinalFullFilename(1).c_str());
-												}
-
-												videoConverter.Cleanup();
-											}
-											else
-											{
-												MESSAGE_ERROR("", "", "2-st phase failed, video [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] hasn't been converted");
-											}
-
-										}
-										catch(...)
-										{
-											MESSAGE_DEBUG("", "", "exception caught in SecondStageVideoConverting-process, can't handle it, just exit");
-
-											exit(1);
-										}
-
-										// --- exit from video converting here.
-										// --- if continue many things can be broken, 
-										// --- parent process already close and clear all structures
-										MESSAGE_DEBUG("", "", "exit from child process");
-
-										exit(0);
-									}
-
-									MESSAGE_DEBUG("", "", "parent process after fork");
-								}
-								else
-								{
-									MESSAGE_ERROR("", "", "inserting image info into feed_images table");
-
-									ostJSONResult << "{" << std::endl;
-									ostJSONResult << "\"result\": \"error\"," << std::endl;
-									ostJSONResult << "\"textStatus\": \"error inserting into table\"," << std::endl;
-									ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ," << std::endl;
-									ostJSONResult << "\"imageID\": \"" << feed_mediaID << "\" ," << std::endl;
-									ostJSONResult << "\"mediaType\": \"video\" ," << std::endl;
-									ostJSONResult << "\"jqXHR\": \"\"" << std::endl;
-									ostJSONResult << "}" << std::endl;
-								}
-								if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
-							}
-							else
-							{
-								MESSAGE_ERROR("", "", "1-st phase failed, video [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] is not valid format")
-
-								if(filesCounter == 0) ostJSONResult << "[" << std::endl;
-								if(filesCounter  > 0) ostJSONResult << ",";
-								ostJSONResult << "{" << std::endl;
-								ostJSONResult << "\"result\": \"error\"," << std::endl;
-								ostJSONResult << "\"textStatus\": \"некорректное изображение\"," << std::endl;
-								ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ," << std::endl;
-								ostJSONResult << "\"jqXHR\": \"\"" << std::endl;
-								ostJSONResult << "}" << std::endl;
-								if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
-							}
-						} // --- if uploaded file video
-						else
-						{
-							{
-								if(currFileType == FILETYPE_UNDEFINED) 
-								{
-									MESSAGE_ERROR("", "", "file type (" + indexPage.GetFilesHandler()->GetName(filesCounter) + "): undefined");
-								}
-								else 
-								{
-									MESSAGE_DEBUG("", "", "video and images can't be mixed in a single message  or  more than one video file uploaded");
-								}
-							}
-
-							if(filesCounter == 0) ostJSONResult << "[" << std::endl;
-							if(filesCounter  > 0) ostJSONResult << ",";
-							ostJSONResult << "{" << std::endl;
-							ostJSONResult << "\"result\": \"error\"," << std::endl;
-							ostJSONResult << "\"textStatus\": \"<br>картинки, видео, youtube видео - не могут быть в одном сообщении<br>в одном сообщении не может быть больше одного видео\"," << std::endl;
-							ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ," << std::endl;
-							ostJSONResult << "\"jqXHR\": \"\"" << std::endl;
-							ostJSONResult << "}" << std::endl;
-							if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
-						}  // --- if uploaded file neither image nor video
-					} // --- if file size acceptable
-				} // --- Loop through all uploaded files
-			}
-			else
-			{
-				MESSAGE_ERROR("", "", "message owner error (type:" + messageOwnerType + ", id:" + messageOwnerID + ")")
-
-				ostJSONResult.str("");
-				ostJSONResult << "{";
-				ostJSONResult << "\"result\" : \"error\",";
-				ostJSONResult << "\"description\" : \"Ошибка: Не получилось определить владельца сообщения\"";
-				ostJSONResult << "}";
-			}
+			ostJSONResult.str("");
+			ostJSONResult <<	"[{"
+								"\"result\" : \"error\","
+								"\"fileName\" : \"\","
+								"\"textStatus\" : \"" + error_message + "\""
+								"}]";
 		}
 
 		// --- template shown in 99%
@@ -837,13 +873,13 @@ int main()
 		MESSAGE_ERROR("", "", "catch CExceptionHTML: exception reason: [" + c.GetReason() + "]");
 
 		ost.str("");
-		ost << "[{" << std::endl;
-		ost << "\"result\": \"error\"," << std::endl;
-		ost << "\"textStatus\": \"" << c.GetReason();
-		if(c.GetParam1().length() > 0) ost << " (" << c.GetParam1() << ")";
-		ost << "\"," << std::endl;
-		ost << "\"jqXHR\": \"\"" << std::endl;
-		ost << "}]" << std::endl;
+		ost <<	"[{"
+				"\"result\": \"error\","
+				"\"textStatus\": \"" << c.GetReason()
+			<<	((c.GetParam1().length() > 0) ? " (" + c.GetParam1() + ")" : "") <<
+				"\","
+				"\"jqXHR\": \"\""
+				"}]";
 		indexPage.RegisterVariableForce("result", ost.str());
 
 		if(!indexPage.SetProdTemplate(c.GetTemplate()))

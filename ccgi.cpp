@@ -444,17 +444,22 @@ void CCgi::RegisterVariableForce(string name, string value)
     vars.Redefine(name, value);
 }
 
-void CCgi::ParseURL()
+string CCgi::ParseURL()
 {
     CRequest	req;
     char		*c = getenv("HTTP_COOKIE");   /* Flawfinder: ignore */
+    auto		error_message = req.RegisterURLVariables(&vars, &files, ctx);
 
-    req.RegisterURLVariables(&vars, &files);
-    if(c)
+    if(error_message.empty())
     {
-		cookie.ParseString(c);
-		cookie.RegisterCookieVariables(&vars);
+	    if(c)
+	    {
+			cookie.ParseString(c);
+			cookie.RegisterCookieVariables(&vars);
+	    }
     }
+
+    return error_message;
 }
 
 CVars *CCgi::GetVarsHandler()

@@ -27,6 +27,7 @@ class CCgi
 		CVars				vars;
 		CFiles				files;
 		CSession			sessionDB;
+		c_ctx_request		*ctx;
 		int					initHeadersFlag;
 		vector<string>		empty_var_list = {};
 
@@ -52,6 +53,7 @@ class CCgi
 				CCgi(const char *fileName, CVars v, CFiles f);
 
 		void	SetDB(CMysql *mysql);
+		void	SetCtx(c_ctx_request *_ctx)			{ ctx = _ctx; };
 
 		void	SetVars(CVars &param) 				{ vars = param; };
 
@@ -89,7 +91,7 @@ class CCgi
 	    void    RegisterVariableForce(string name, string value);
 
 		//Register all parameters of URL in "CVars var"
-		void	ParseURL();
+		string	ParseURL();
 
 		//Return CVars enum
 		//in:
