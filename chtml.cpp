@@ -12,8 +12,8 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 	size_t				bufferLength = size * nmemb;
 	// --- don't use first option
 	// unique_ptr<char[]>	tempSmartPointer(new char[bufferLength + 1]); // "+1" must host last '\0'	
-	unique_ptr<char[]>	tempSmartPointer = make_unique<char[]>(bufferLength + 1); // "+1" must host last '\0'	
-	char				*bufferToWrite = tempSmartPointer.get();
+	auto	tempSmartPointer = make_unique<char[]>(bufferLength + 1); // "+1" must host last '\0'	
+	char	*bufferToWrite = tempSmartPointer.get();
 
 	memcpy(bufferToWrite, contents, bufferLength);   /* Flawfinder: ignore */
 	bufferToWrite[bufferLength] = 0;
