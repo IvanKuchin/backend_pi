@@ -1476,11 +1476,11 @@ string GetUserAvatarByUserID(string userID, CMysql *db)
 	return userAvatar;
 }
 
-// --- function removes message image from FileSystems and cleanup DB
-// --- as input require SWL WHERE clause (because of using SELECT and DELETE statements)
-// --- input params:
-// --- 1) SQL WHERE statement
-// --- 2) db reference
+// function removes message image from FileSystems and cleans-up DB
+// as input require SQL WHERE clause (because of using SELECT and DELETE statements)
+// input params:
+// 1) SQL WHERE statement
+// 2) db reference
 void	RemoveMessageImages(const string &sqlWhereStatement, CMysql *db)
 {
 	MESSAGE_DEBUG("", "", "start (sqlWhereStatement: " + sqlWhereStatement + ")");
