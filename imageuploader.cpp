@@ -1,5 +1,46 @@
 #include "imageuploader.h"	 
 
+
+static void DaemonizeProcess() {
+	MESSAGE_DEBUG("", "", "start");
+
+	// --- daemonize process
+	// --- this allows apache not to wait until child process finished
+	auto sid = setsid();
+	if(sid < 0) 
+	{
+		MESSAGE_ERROR("", "", "can't daemonize SecondStageVideoConversion-process setsid returns error [" + to_string(EXIT_FAILURE) + "]");
+
+		// --- it must be caught by "catch" in child process
+		throw;
+	}
+
+	MESSAGE_DEBUG("", "", "redirect stdin/stdout/stderr -> /dev/null");
+
+	// --- Redirect standard files to /dev/null 
+	// --- otherwise apache waits until stdout and stderr will be closed
+	if(!freopen( "/dev/null", "r", stdin))
+	{
+		MESSAGE_ERROR("", "", "redirect error stdin -> /dev/null");
+
+		throw;  
+	} 
+	if(!freopen( "/dev/null", "w", stdout))
+	{
+		MESSAGE_ERROR("", "", "redirect error stdout -> /dev/null");
+
+		throw;  
+	} 
+	if(!freopen( "/dev/null", "w", stderr))
+	{
+		MESSAGE_ERROR("", "", "redirect error stderr -> /dev/null");
+
+		throw;  
+	} 
+
+	MESSAGE_DEBUG("", "", "finish")
+}
+
 // return message content image or video
 // message could contain either VIDEO or IMAGES
 int GetMessageMedia(string imageTempSet, CMysql *db)
@@ -36,32 +77,32 @@ int GetMessageMedia(string imageTempSet, CMysql *db)
 	return result;
 }
 
-bool VideoConverter(const string src, const string dst, struct ExifInfo &exifInfo)
-{
-	bool	result = true;
+// bool VideoConverter(const string src, const string dst, struct ExifInfo &exifInfo)
+// {
+// 	bool	result = true;
 
-	MESSAGE_DEBUG("", "", "start");
+// 	MESSAGE_DEBUG("", "", "start");
 
-	{
-		int	 ret;
-		setpriority(PRIO_PROCESS, getpid(), 5);
-		ret = getpriority(PRIO_PROCESS, getpid());
-		if((ret > -20) and (ret < 19))
-		{
-			MESSAGE_DEBUG("", "", "process priority " + to_string(ret));
-		}
-		else
-		{
-			MESSAGE_ERROR("", "", "getting process priority (errno = " + to_string(errno) + ")");
-		}
-	}
+// 	{
+// 		int	 ret;
+// 		setpriority(PRIO_PROCESS, getpid(), 5);
+// 		ret = getpriority(PRIO_PROCESS, getpid());
+// 		if((ret > -20) and (ret < 19))
+// 		{
+// 			MESSAGE_DEBUG("", "", "process priority " + to_string(ret));
+// 		}
+// 		else
+// 		{
+// 			MESSAGE_ERROR("", "", "getting process priority (errno = " + to_string(errno) + ")");
+// 		}
+// 	}
 
-	CopyFile(src, dst);
+// 	CopyFile(src, dst);
 
-	MESSAGE_DEBUG("", "", "finish (result = " + to_string(result) + ")");
+// 	MESSAGE_DEBUG("", "", "finish (result = " + to_string(result) + ")");
 
-	return result;
-}
+// 	return result;
+// }
 
 bool ImageConvertToJpg (const string src, const string dst, struct ExifInfo &exifInfo, c_config *config)
 {
@@ -598,143 +639,136 @@ int main()
 									fwrite(indexPage.GetFilesHandler()->Get(filesCounter), indexPage.GetFilesHandler()->GetSize(filesCounter), 1, f);
 									fclose(f);
 
-									if(videoConverter.FirstPhase())
+									if(videoConverter.CopyStubImage() == "")
 									{
-										auto	  feed_mediaID = 0;
+										// insert temporary stub image, before video will be uploaded
+										string _tmp = "insert into `feed_images` set "
+														"`tempSet`='" + imageTempSet + "', "
+														"`srcType`='" + messageOwnerType + "',  "
+														"`userID`='" + messageOwnerID + "',  "
+														"`folder`='" + videoConverter.GetStubImageFolderID() + "', "
+														"`filename`='" + videoConverter.GetStubImageFilename() + "',"
+														"`mediaType`=\"image\";";
+										auto	stub_image_id = db.InsertQuery(_tmp);
 
-										ost.str("");
-										ost << "insert into `feed_images` set "
-											<< "`tempSet`='" << imageTempSet << "', "
-											<< "`srcType`='" << messageOwnerType << "',  "
-											<< "`userID`='" << messageOwnerID << "',  "
-											<< "`folder`='" << videoConverter.GetFinalFolder() << "', "
-											<< "`filename`='" << videoConverter.GetFinalFilename(0) << "',"
-											<< "`exifGPSAltitude`='" << ParseGPSAltitude(videoConverter.GetMetadataLocationAltitude()) << "',"
-											<< "`exifGPSLongitude`='" << ParseGPSLongitude(videoConverter.GetMetadataLocationLongitude()) << "',"
-											<< "`exifGPSLatitude`='" << ParseGPSLatitude(videoConverter.GetMetadataLocationLatitude()) << "',"
-											<< "`exifDateTime`='" << videoConverter.GetMetadataDateTime() << "',"
-											<< "`exifMake`='" << videoConverter.GetMetadataMake() << "',"
-											<< "`exifModel`='" << videoConverter.GetMetadataModel() << "',"
-											<< "`exifSoftware`='" << videoConverter.GetMetadataSW() << "',"
-											<< "`mediaType`=\"video\";";
-										feed_mediaID = db.InsertQuery(ost.str());
-
-										if(filesCounter == 0) ostJSONResult << "[";
-										if(filesCounter  > 0) ostJSONResult << ",";
-										if(feed_mediaID)
+										if(stub_image_id)
 										{
-											pid_t	   forkPID;
-
-											ostJSONResult << "{";
-											ostJSONResult << "\"result\": \"success\",";
-											ostJSONResult << "\"textStatus\": \"\",";
-											ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
-											ostJSONResult << "\"imageID\": \"" << feed_mediaID << "\" ,";
-											ostJSONResult << "\"mediaType\": \"video\" ,";
-											ostJSONResult << "\"jqXHR\": \"\"";
-											ostJSONResult << "}";
-
+											// Return result only about "stub image".
+											// no results about video returned
+											ostJSONResult << "[{"
+															 "\"result\": \"success\","
+															 "\"textStatus\": \"\","
+															 "\"fileName\": \"" + videoConverter.GetStubImageFilename() + "\" ,"
+															 "\"imageID\": \"" + to_string(stub_image_id) + "\" ,"
+															 "\"mediaType\": \"image\" ,"
+															 "\"jqXHR\": \"\""
+															 "}]";
 
 											// --- fork here
 											// --- parent process: return response to user (to avoid long waiting)
 											// --- child process: continue video converting to webm-format (very long conversion)
 											// --- !!! IMPORTANT !!!
 											// --- no need to add additional functionality here
-											forkPID = fork();
+											auto forkPID = fork();
 											if(forkPID == 0)
 											{
-												pid_t	   sid;
-
 												// --- child process
-												{
-													MESSAGE_DEBUG("", "", "child process after fork");
-												}
+												MESSAGE_DEBUG("", "", "child process after fork");
 												
 												try
 												{
-													{
-														MESSAGE_DEBUG("", "", "daemonize process");
-													}
-													// --- daemonize process
-													// --- this allows apache not to wait until child process finished
-													sid = setsid();
-													if(sid < 0) 
-													{
-														MESSAGE_ERROR("", "", "can't daemonize SecondStageVideoConversion-process setsid returns error [" + to_string(EXIT_FAILURE) + "]");
-
-														// --- it must be caught by "catch" in child process
-														throw;
-													}
-
-													MESSAGE_DEBUG("", "", "redirect stdin/stdout/stderr -> /dev/null");
-
-													// --- Redirect standard files to /dev/null 
-													// --- otherwise apache waits until stdout and stderr will be closed
-													if(!freopen( "/dev/null", "r", stdin))
-													{
-														MESSAGE_ERROR("", "", "redirect error stdin -> /dev/null");
-
-														throw;  
-													} 
-													if(!freopen( "/dev/null", "w", stdout))
-													{
-														MESSAGE_ERROR("", "", "redirect error stdout -> /dev/null");
-
-														throw;  
-													} 
-													if(!freopen( "/dev/null", "w", stderr))
-													{
-														MESSAGE_ERROR("", "", "redirect error stderr -> /dev/null");
-
-														throw;  
-													} 
-													
+													DaemonizeProcess();
 
 													showTemplate = false;
 
-													if(videoConverter.SecondPhase())
+													if(videoConverter.FirstPhase())
 													{
 														// --- create new DB-connection, due to parent will close the old one
 														CMysql  db1;		
-
 														if(db1.Connect(&config) < 0)
 														{
 															MESSAGE_ERROR("", "", "Can not connect to mysql database");
 															throw CException("MySql connection");
 														}
 
-														if(db1.Query("SELECT * FROM `feed_images` where `id`=\"" + to_string(feed_mediaID) + "\";"))
+														if(db1.Query("SELECT * FROM `feed_images` where `id`=\"" + to_string(stub_image_id) + "\";"))
 														{
-															ost.str("");
-															ost << "insert into `feed_images` set "
-																<< "`setID`='" << db1.Get(0, "setID") << "', "
-																<< "`tempSet`='" << db1.Get(0, "tempSet") << "', "
-																<< "`srcType`='" << messageOwnerType << "',  "
-																<< "`userID`='" << messageOwnerID << "',  "
-																<< "`folder`='" << videoConverter.GetFinalFolder() << "', "
-																<< "`filename`='" << videoConverter.GetFinalFilename(1) << "',"
-																<< "`exifGPSAltitude`='" << ParseGPSAltitude(videoConverter.GetMetadataLocationAltitude()) << "',"
-																<< "`exifGPSLongitude`='" << ParseGPSLongitude(videoConverter.GetMetadataLocationLongitude()) << "',"
-																<< "`exifGPSLatitude`='" << ParseGPSLatitude(videoConverter.GetMetadataLocationLatitude()) << "',"
-																<< "`exifDateTime`='" << videoConverter.GetMetadataDateTime() << "',"
-																<< "`exifMake`='" << videoConverter.GetMetadataMake() << "',"
-																<< "`exifModel`='" << videoConverter.GetMetadataModel() << "',"
-																<< "`exifSoftware`='" << videoConverter.GetMetadataSW() << "',"
-																<< "`mediaType`=\"video\";";
-															feed_mediaID = db1.InsertQuery(ost.str());
+															auto tmp = "insert into `feed_images` set "s
+																		"`setID`='" + db1.Get(0, "setID") + "', "
+																		"`tempSet`='" + db1.Get(0, "tempSet") + "', "
+																		"`srcType`='" + messageOwnerType + "',  "
+																		"`userID`='" + messageOwnerID + "',  "
+																		"`folder`='" + videoConverter.GetFinalFolder() + "', "
+																		"`filename`='" + videoConverter.GetFinalFilename(0) + "',"
+																		"`exifGPSAltitude`='" + ParseGPSAltitude(videoConverter.GetMetadataLocationAltitude()) + "',"
+																		"`exifGPSLongitude`='" + ParseGPSLongitude(videoConverter.GetMetadataLocationLongitude()) + "',"
+																		"`exifGPSLatitude`='" + ParseGPSLatitude(videoConverter.GetMetadataLocationLatitude()) + "',"
+																		"`exifDateTime`='" + videoConverter.GetMetadataDateTime() + "',"
+																		"`exifMake`='" + videoConverter.GetMetadataMake() + "',"
+																		"`exifModel`='" + videoConverter.GetMetadataModel() + "',"
+																		"`exifSoftware`='" + videoConverter.GetMetadataSW() + "',"
+																		"`mediaType`=\"video\";";
+															auto first_phase_video_id = db1.InsertQuery(tmp);
+
+															// remove stub image
+															auto	sqlWhereStatement	= " `id`=\""s + to_string(stub_image_id) + "\"";
+															RemoveMessageImages(sqlWhereStatement, &db1);
+
+															if(videoConverter.SecondPhase())
+															{
+																if(db1.Query("SELECT * FROM `feed_images` where `id`=\"" + to_string(first_phase_video_id) + "\";"))
+																{
+																	auto tmp = "insert into `feed_images` set "s
+																				"`setID`='" + db1.Get(0, "setID") + "', "
+																				"`tempSet`='" + db1.Get(0, "tempSet") + "', "
+																				"`srcType`='" + messageOwnerType + "',  "
+																				"`userID`='" + messageOwnerID + "',  "
+																				"`folder`='" + videoConverter.GetFinalFolder() + "', "
+																				"`filename`='" + videoConverter.GetFinalFilename(1) + "',"
+																				"`exifGPSAltitude`='" + ParseGPSAltitude(videoConverter.GetMetadataLocationAltitude()) + "',"
+																				"`exifGPSLongitude`='" + ParseGPSLongitude(videoConverter.GetMetadataLocationLongitude()) + "',"
+																				"`exifGPSLatitude`='" + ParseGPSLatitude(videoConverter.GetMetadataLocationLatitude()) + "',"
+																				"`exifDateTime`='" + videoConverter.GetMetadataDateTime() + "',"
+																				"`exifMake`='" + videoConverter.GetMetadataMake() + "',"
+																				"`exifModel`='" + videoConverter.GetMetadataModel() + "',"
+																				"`exifSoftware`='" + videoConverter.GetMetadataSW() + "',"
+																				"`mediaType`=\"video\";";
+																	db1.InsertQuery(tmp);
+																}
+																else
+																{
+																	MESSAGE_DEBUG("", "", "remove newly converted video [" + videoConverter.GetFinalFullFilename(1) + "] because user canceled message submission");
+																	
+																	unlink(videoConverter.GetFinalFullFilename(1).c_str());
+																}
+
+																videoConverter.Cleanup();
+															}
+															else
+															{
+																MESSAGE_ERROR("", "", "2-st phase failed, video [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] hasn't been converted");
+															}
 														}
 														else
 														{
 															MESSAGE_DEBUG("", "", "remove newly converted video [" + videoConverter.GetFinalFullFilename(1) + "] because user canceled message submission");
 															
-															unlink(videoConverter.GetFinalFullFilename(1).c_str());
+															unlink(videoConverter.GetFinalFullFilename(0).c_str());
 														}
-
-														videoConverter.Cleanup();
 													}
 													else
 													{
-														MESSAGE_ERROR("", "", "2-st phase failed, video [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] hasn't been converted");
+														MESSAGE_ERROR("", "", "1-st phase failed, video [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] is not valid format")
+
+														if(filesCounter == 0) ostJSONResult << "[";
+														if(filesCounter  > 0) ostJSONResult << ",";
+														ostJSONResult << "{";
+														ostJSONResult << "\"result\": \"error\",";
+														ostJSONResult << "\"textStatus\": \"некорректное изображение\",";
+														ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
+														ostJSONResult << "\"jqXHR\": \"\"";
+														ostJSONResult << "}";
+														if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
 													}
 
 												}
@@ -764,26 +798,21 @@ int main()
 											ostJSONResult << "\"result\": \"error\",";
 											ostJSONResult << "\"textStatus\":" << quoted(error_message);
 											ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
-											ostJSONResult << "\"imageID\": \"" << feed_mediaID << "\" ,";
+											ostJSONResult << "\"imageID\": \"" << stub_image_id << "\" ,";
 											ostJSONResult << "\"mediaType\": \"video\" ,";
 											ostJSONResult << "\"jqXHR\": \"\"";
 											ostJSONResult << "}";
 										}
-										if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
+
 									}
 									else
 									{
-										MESSAGE_ERROR("", "", "1-st phase failed, video [" + indexPage.GetFilesHandler()->GetName(filesCounter) + "] is not valid format")
-
-										if(filesCounter == 0) ostJSONResult << "[";
-										if(filesCounter  > 0) ostJSONResult << ",";
-										ostJSONResult << "{";
+										ostJSONResult << "[{";
 										ostJSONResult << "\"result\": \"error\",";
-										ostJSONResult << "\"textStatus\": \"некорректное изображение\",";
-										ostJSONResult << "\"fileName\": \"" << indexPage.GetFilesHandler()->GetName(filesCounter) << "\" ,";
+										ostJSONResult << "\"textStatus\": \"ошибка загркзки временной картинки\",";
+										ostJSONResult << "\"fileName\": \"" << videoConverter.GetStubImageFilename() << "\" ,";
 										ostJSONResult << "\"jqXHR\": \"\"";
-										ostJSONResult << "}";
-										if(filesCounter == (indexPage.GetFilesHandler()->Count() - 1)) ostJSONResult << "]";
+										ostJSONResult << "}]";
 									}
 								} // --- if uploaded file video
 								else

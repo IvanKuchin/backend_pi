@@ -13,6 +13,7 @@ CVideoConverter::CVideoConverter(string originalFilename)
 	MESSAGE_DEBUG("", "", "start");
 	
 	PickUniqPrefix(originalFilename);
+	StubImagePickUniqPrefix();
 
 	MESSAGE_DEBUG("", "", "finish");
 }
@@ -64,6 +65,56 @@ bool CVideoConverter::PickUniqPrefix(string srcFileName)
 	MESSAGE_DEBUG("", "", "finish (result = " + to_string(result) + ")");
 
 	return  result;
+}
+
+bool CVideoConverter::StubImagePickUniqPrefix()
+{
+	MESSAGE_DEBUG("", "", "start");
+
+	auto	result = false;
+	auto	tryAgain = false;
+
+	do
+	{
+		_stubImageFolderID = "1";
+		_stubImageFilename = GetRandom(20) + ".png";
+		auto _stubImageFileName = IMAGE_FEED_DIRECTORY + "/" + _stubImageFolderID + "/" + _stubImageFilename;
+
+		if(isFileExists(_stubImageFileName)) tryAgain = true; else tryAgain = false;
+
+	} while(tryAgain);
+
+	MESSAGE_DEBUG("", "", "finish (result = " + to_string(result) + ")");
+
+	return  result;
+}
+
+string CVideoConverter::GetStubImageFolderID()
+{
+	return _stubImageFolderID;
+}
+
+string CVideoConverter::GetStubImageFilename()
+{
+	return _stubImageFilename;
+}
+
+string CVideoConverter::GetStubImageFullFilename()
+{
+	return IMAGE_FEED_DIRECTORY + "/" + GetStubImageFolderID() + "/" + GetStubImageFilename();
+}
+
+string CVideoConverter::CopyStubImage() 
+{
+	MESSAGE_DEBUG("", "", "start");
+
+	auto stub_image = IMAGE_FEED_DIRECTORY + "/1/video_stub.png";
+
+	auto error_message = CopyFile(stub_image, GetStubImageFullFilename());
+
+	MESSAGE_DEBUG("", "", "finish");
+
+	return error_message;
 }
 
 string CVideoConverter::GetFinalFolder()

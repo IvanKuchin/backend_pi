@@ -37,6 +37,9 @@ class CVideoConverter
 	string				_originalFileExtension;
 	vector<string>		_exts = {".mp4", ".webm"};
 
+	string				_stubImageFolderID;
+	string				_stubImageFilename;
+
 	int					_width = 0, _height = 0;
 	string				_rotation = "";
 
@@ -51,6 +54,8 @@ class CVideoConverter
 
 private:
 	bool	PickUniqPrefix(string srcFileName);
+	bool	StubImagePickUniqPrefix();
+
 	bool	VideoConvert(int dstIndex, char **argv);
 	bool	ReadMetadataAndResolution();
 	bool	ParseLocationToComponents(string src);
@@ -58,6 +63,11 @@ private:
 public:
 			CVideoConverter();
 			CVideoConverter(string originalFilename);
+
+	string	GetStubImageFolderID();
+	string	GetStubImageFilename();
+	string 	GetStubImageFullFilename();
+	string 	CopyStubImage();
 
 	string	GetFinalFolder();
 
