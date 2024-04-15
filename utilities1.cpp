@@ -984,7 +984,7 @@ bool	isFilenameImage(const string &filename)
 	MESSAGE_DEBUG("", "", "start (" + filename + ")");
 
 	auto	result = false;
-	regex   e1("[.](gif|jpg|jpeg|png)$", regex_constants::icase);
+	regex   e1("[.](gif|jpg|jpeg|png|heic|heif)$", regex_constants::icase);
 
 	result = regex_search(filename, e1);
 
