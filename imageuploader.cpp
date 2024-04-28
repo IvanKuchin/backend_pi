@@ -279,7 +279,7 @@ bool ImageConvertToJpg (const string src, const string dst, struct ExifInfo &exi
 		return false;
 	}
 
-	MESSAGE_DEBUG("", "", "finish (image has been successfully converted to .jpg format)")
+	MESSAGE_DEBUG("", "", "finish (image has been successfully converted to " + IMAGE_EXTENSION + " format)")
 
 	return true;
 #else
@@ -467,11 +467,11 @@ int main()
 										}
 										else
 										{
-											fileExtension = ".jpg";
+											fileExtension = IMAGE_EXTENSION;
 										}
 
 										ost.str("");
-										ost << IMAGE_FEED_DIRECTORY << "/" << folderID << "/" << filePrefix << ".jpg";
+										ost << IMAGE_FEED_DIRECTORY << "/" << folderID << "/" << filePrefix << IMAGE_EXTENSION;
 										finalFile = ost.str();
 
 										ost.str("");
@@ -479,7 +479,7 @@ int main()
 										tmpFile2Check = ost.str();
 
 										ost.str("");
-										ost << "/tmp/" << filePrefix << ".jpg";
+										ost << "/tmp/" << filePrefix << IMAGE_EXTENSION;
 										tmpImageJPG = ost.str();
 									} while(isFileExists(finalFile) || isFileExists(tmpFile2Check) || isFileExists(tmpImageJPG));
 
@@ -510,7 +510,7 @@ int main()
 										`srcType`='" << messageOwnerType << "',  \
 										`userID`='" << messageOwnerID << "',  \
 										`folder`='" << folderID << "', \
-										`filename`='" << filePrefix << ".jpg', "
+										`filename`='" << filePrefix << IMAGE_EXTENSION << ", "
 										<< "`mediaType`=\"image\", "
 										<< ((exifInfo.DateTime.length() && exifInfo.DateTime != "unknown") ? (string)("`exifDateTime`='") + exifInfo.DateTime + "', " : "")
 										<< "`exifGPSAltitude`='" << ParseGPSAltitude(exifInfo.GPSAltitude) << "', "
