@@ -153,7 +153,9 @@ auto			GetValuesFromDB(string sql, CMysql *) -> vector<string>;
 auto			GetCountryCodeAndPhoneNumberBySMSCode(const string &confirmation_code, const string &session, CMysql *) -> tuple<string, string, string>;
 
 // --- file system functions
+auto			GetFilePath(const string &path) -> string;
 auto			CreateDir(const string &dir) -> bool;
+auto			CreateRecursiveDir(const string &path) -> string;
 auto 			RmDirRecursive(const char *dirname) -> bool;
 auto        	isDirExists(const std::string& name) -> bool;
 auto        	isFileExists(const std::string& name) -> bool;

@@ -1231,28 +1231,33 @@ auto CopyFile(const string &src, const string &dst) -> string
 
 	ifstream source(src.c_str(), ios::binary);
 
-	if(source.is_open())
-	{
-		ofstream dest(dst.c_str(), ios::binary);
+    error_message = CreateRecursiveDir(GetFilePath(dst));
 
-		if(dest.is_open())
+    if(error_message.empty())
+    {
+		if(source.is_open())
 		{
-			dest << source.rdbuf();
+			ofstream dest(dst.c_str(), ios::binary);
 
-			dest.close();
+			if(dest.is_open())
+			{
+				dest << source.rdbuf();
+
+				dest.close();
+			}
+			else
+			{
+				error_message = "fail to open destination file (" + dst + ")";
+				MESSAGE_ERROR("", "", error_message);
+			}
+
+			source.close();
 		}
 		else
 		{
-			error_message = "fail to open destination file (" + dst + ")";
+			error_message = "fail to open source file (" + src + ")";
 			MESSAGE_ERROR("", "", error_message);
 		}
-
-		source.close();
-	}
-	else
-	{
-		error_message = "fail to open source file (" + src + ")";
-		MESSAGE_ERROR("", "", error_message);
 	}
 
 	end = clock();

@@ -2263,6 +2263,74 @@ bool CreateDir(const string &dir)
 	return result;
 }
 
+auto GetFilePath(const string &path) -> string
+{
+	MESSAGE_DEBUG("", "", "start (" + path + ")");
+
+    auto pos = path.find_last_of("/");
+    auto result = ""s;
+
+    if(pos == string::npos)
+    {
+    }
+    else
+    {
+        result = path.substr(0, pos+1);
+    }
+
+	MESSAGE_DEBUG("", "", "finish (" + result + ")");
+
+    return result;
+}
+
+auto CreateRecursiveDir(const string &path) -> string
+{
+	MESSAGE_DEBUG("", "", "start (" + path + ")");
+
+    auto	error_message = ""s;
+    auto	pos = path.find_last_of("/");
+
+    if(path == "" || path == "." || path == "./")
+        return ""; // no error
+
+    if(path == "/")
+    {
+        error_message = "can't create root directory";
+        MESSAGE_ERROR("", "", error_message);
+    }
+
+    if(path == "..")
+    {
+        error_message = "can't create parent directory";
+        MESSAGE_ERROR("", "", error_message);
+    }
+
+    if(pos != string::npos)
+    {
+        auto	parent = path.substr(0, pos);
+
+        if(!isDirExists(parent))
+        {
+            error_message = CreateRecursiveDir(parent);
+        }
+    }
+
+    // another round of DirExists check is required in case of mis-typed path (for example, /123/234//file.txt)
+    if(error_message.empty() && !isDirExists(path))
+    {
+        MESSAGE_DEBUG("", "", "create path (" + path + ")");
+        if(mkdir(path.c_str(), 0755) != 0)
+        {
+            error_message = "fail to create directory (" + path + ")";
+            MESSAGE_ERROR("", "", error_message);
+        }
+    }
+
+	MESSAGE_DEBUG("", "", "finish (" + path + ")");
+    
+    return error_message;
+}
+
 bool RmDirRecursive(const char *dirname)
 {
 	DIR		*dir;
