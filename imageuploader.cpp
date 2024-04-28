@@ -510,7 +510,7 @@ int main()
 										`srcType`='" << messageOwnerType << "',  \
 										`userID`='" << messageOwnerID << "',  \
 										`folder`='" << folderID << "', \
-										`filename`='" << filePrefix << IMAGE_EXTENSION << ", "
+										`filename`='" << filePrefix << IMAGE_EXTENSION << "', "
 										<< "`mediaType`=\"image\", "
 										<< ((exifInfo.DateTime.length() && exifInfo.DateTime != "unknown") ? (string)("`exifDateTime`='") + exifInfo.DateTime + "', " : "")
 										<< "`exifGPSAltitude`='" << ParseGPSAltitude(exifInfo.GPSAltitude) << "', "
