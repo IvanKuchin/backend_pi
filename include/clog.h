@@ -20,7 +20,7 @@ using namespace std;
 #define	ERROR		3
 #define	PANIC		4
 
-#define	CURRENT_LOG_LEVEL			DEBUG
+#define	CURRENT_LOG_LEVEL			INFO
 
 #define	LOG_FILE_MAX_LENGTH			500 // user to strip long output to log file
 #define	LOG_FILE_NAME				string(LOGDIR) + "backend.log"
