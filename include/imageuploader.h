@@ -35,6 +35,6 @@
 #define	FILETYPE_IMAGE		 			3
 #define	FILETYPE_YOUTUBE_VIDEO 			4
 
-#define IMAGE_EXTENSION                 ".avif"
+#define IMAGE_EXTENSION                 ".webp"
 
 #endif
