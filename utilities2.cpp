@@ -2212,6 +2212,49 @@ bool isFileExists(const std::string& name)
 	return (stat (name.c_str(), &buffer) == 0);
 }
 
+bool isFileReadable(const std::string& name)
+{
+	struct stat buffer;
+	return (stat (name.c_str(), &buffer) == 0 && (buffer.st_mode & S_IRUSR));
+}
+
+bool isFileWritable(const std::string& name)
+{
+	struct stat buffer;
+	return (stat (name.c_str(), &buffer) == 0 && (buffer.st_mode & S_IWUSR));
+}
+
+bool createFileForWriting(const std::string& name)
+{
+	struct stat buffer;
+	auto		result = false;
+
+	MESSAGE_DEBUG("", "", "start (" + name + ")");
+
+	if(stat(name.c_str(), &buffer) != 0)
+	{
+		auto	f = fopen(name.c_str(), "w");   /* Flawfinder: ignore */
+		if(f)
+		{
+			fclose(f);
+			remove(name.c_str()); // --- remove empty file, because it is not required
+			result = true;
+		}
+		else
+		{
+			MESSAGE_ERROR("", "", "can't create file(" + name + ")");
+		}
+	}
+	else
+	{
+		MESSAGE_ERROR("", "", "file(" + name + ") already exists")
+	}
+
+	MESSAGE_DEBUG("", "", "finish (result = " + (result ? "true" : "false") + ")");
+
+	return result;
+}
+
 bool isDirExists(const std::string& name)
 {
 	struct stat buffer;
@@ -2905,6 +2948,10 @@ auto GenerateImage(const string &randStr) -> string
 				ostringstream 		ost;
 				auto 				fileFlagExist = true;
 
+				if(!isFileReadable(fileName)) {
+					MESSAGE_ERROR("", "", "InitializeMagick can't read the file " + fileName);
+					return "";
+				}
 				imageMaster.read(fileName);    /* Flawfinder: ignore */
 				imageDest = imageMaster;
 				imageDest.fontPointsize(14);
@@ -2938,13 +2985,19 @@ auto GenerateImage(const string &randStr) -> string
 				} while(fileFlagExist == true);
 
 
+				if(!createFileForWriting(fileResultFull))
+				{
+					MESSAGE_ERROR("", "", "can't write to " + fileResultFull + ", check permissions");
+					return "";
+				}
+				
 				MESSAGE_DEBUG("", "", "write captcha-image to " + fileResultFull);
 
 				imageDest.write(fileResultFull);
 			}
 			catch(Magick::Exception &error_)
 			{
-				MESSAGE_ERROR("", "", "Caught exception: " + error_.what())
+				MESSAGE_ERROR("", "", "Caught ImageMagick exception inside GenerateImage: " + error_.what())
 				fileResult = "";		
 			}
 		}
