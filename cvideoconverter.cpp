@@ -367,8 +367,16 @@ bool CVideoConverter::FirstPhase()
 			double	videoScaleFinalWidth	= videoScaleMax > 1 ? _width / videoScaleMax : _width;
 			double	videoScaleFinalHeight	= videoScaleMax > 1 ? _height / videoScaleMax : _height;
 
+			// Round to nearest even number to avoid ffmpeg codec issues with odd dimensions
+			int		finalWidth				= ((int)videoScaleFinalWidth / 2) * 2;
+			int		finalHeight				= ((int)videoScaleFinalHeight / 2) * 2;
+			
+			// Ensure dimensions are at least 2x2 pixels
+			if(finalWidth < 2) finalWidth = 2;
+			if(finalHeight < 2) finalHeight = 2;
+
 			memset(scaleArg, 0, sizeof(scaleArg));
-			sprintf(scaleArg, "scale=%d:%d", (int)videoScaleFinalWidth, (int)videoScaleFinalHeight);   /* Flawfinder: ignore */
+			sprintf(scaleArg, "scale=%d:%d", finalWidth, finalHeight);   /* Flawfinder: ignore */
 
 			argv[0] = const_cast<char *>("ffmpeg");
 			argv[1] = const_cast<char *>("-i");
