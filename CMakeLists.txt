@@ -165,6 +165,12 @@ set(PROJECT_EXTERNAL_LIBS
     ${XL_LIBRARY}
     )
 
+# Add mandatory definitions for ImageMagick 7 compilation stability
+add_compile_definitions(
+    MAGICKCORE_QUANTUM_DEPTH=16
+    MAGICKCORE_HDRI_ENABLE=1
+)
+
 # --- does this system provide the exp function ?
 include(CheckFunctionExists)
 check_function_exists(exp HAVE_EXP)
