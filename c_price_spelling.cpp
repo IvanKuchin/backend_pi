@@ -157,6 +157,7 @@ auto C_Price_Spelling::SpellNumber(unsigned long number, int gender) -> string
             }
     
             ++order_of_magnitude;        
+
             gender = gender_order_of_magnitude[order_of_magnitude];
     
             temp = temp / 1000;

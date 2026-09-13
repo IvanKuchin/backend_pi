@@ -25,6 +25,12 @@ class C_Price_Spelling
                                                         {"миллионов", "миллион", "миллиона"},
                                                         {"миллиардов", "миллиард", "миллиарда"},
                                                         {"трилионов", "трилион", "трилиона"},
+                                                        {"квадриллионов", "квадриллион", "квадриллиона"},
+                                                        {"квинтиллионов", "квинтиллион", "квинтиллиона"},
+                                                        {"секстиллионов", "секстиллион", "секстиллиона"},
+                                                        {"септиллионов", "септиллион", "септиллиона"},
+                                                        {"октиллионов", "октиллион", "октиллиона"},
+                                                        {"нониллионов", "нониллион", "нониллиона"},
                                                     };
         vector<string>  spelling_cents            = {"копеек", "копейка", "копейки"};
         vector<string>  spelling_dollars          = {"рублей", "рубль", "рубля"};
@@ -56,8 +62,14 @@ class C_Price_Spelling
                                                         MALE_GENDER, // --- index[0] - doesn't matter
                                                         FEMALE_GENDER, // --- thousand is female gender
                                                         MALE_GENDER, // --- million is male gender
-                                                        MALE_GENDER, // --- milliard is male gender
+                                                        MALE_GENDER, // --- billion is male gender
                                                         MALE_GENDER, // --- trillion is male gender
+                                                        MALE_GENDER, // --- quadrillion is male gender
+                                                        MALE_GENDER, // --- quintillion is male gender
+                                                        MALE_GENDER, // --- sextillion is male gender
+                                                        MALE_GENDER, // --- septillion is male gender
+                                                        MALE_GENDER, // --- octillion is male gender
+                                                        MALE_GENDER, // --- nonillion is male gender
                                                     };
         bool            minus_flag      = false;
         double          price           = 0;
