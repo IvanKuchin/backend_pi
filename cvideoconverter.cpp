@@ -303,6 +303,22 @@ bool CVideoConverter::ReadMetadataAndResolution()
 
 				MESSAGE_DEBUG("", "", "video stream dimensions [" + to_string(_width) + "x" + to_string(_height) + "]");
 
+                // Check stream side data for rotation matrix (used by modern MOV/MP4 files)
+                const AVPacketSideData *sd = av_packet_side_data_get(
+                    stream->codecpar->coded_side_data,
+                    stream->codecpar->nb_coded_side_data,
+                    AV_PKT_DATA_DISPLAYMATRIX);
+				if (sd) {
+					double rot = av_display_rotation_get((const int32_t *)sd->data);
+					// Normalize the angle to standard positive degrees (0, 90, 180, 270)
+					int int_rot = lround(-rot);
+					int_rot = (int_rot % 360 + 360) % 360;
+
+					_rotation = to_string(int_rot);
+
+					MESSAGE_DEBUG("", "", "display matrix rotation: " + _rotation + " degrees");
+				}
+
 				// --- check video stream meta data
 				// --- is it rotated dimensions
 				tag = nullptr;
@@ -323,6 +339,9 @@ bool CVideoConverter::ReadMetadataAndResolution()
 		if((_rotation == "90") || (_rotation == "270")) swap(_width, _height);
 
 		result = true;
+
+		MESSAGE_DEBUG("", "", "final video rotation [" + _rotation + " degrees]");
+		MESSAGE_DEBUG("", "", "final video dimensions [" + to_string(_width) + "x" + to_string(_height) + "] after rotation");
 	}
 	else
 	{
@@ -345,7 +364,7 @@ bool CVideoConverter::ReadMetadataAndResolution()
 bool CVideoConverter::FirstPhase()
 {
 	bool	result = false;
-	char	scaleArg[30];    /* Flawfinder: ignore */
+	char	scaleArg[256];    /* Flawfinder: ignore */
 	// char	add_overlay_and_blur[512];
 	char	*argv[10];   /* Flawfinder: ignore */
 
@@ -359,50 +378,20 @@ bool CVideoConverter::FirstPhase()
 		tmpSrcFile = GetTempFullFilename();
 		tmpDstFile = GetPreFinalFullFilename(0);
 
-		if(_width && _height)
-		{
-			double	videoScaleWidth			= _width / FEEDVIDEO_MAX_WIDTH;
-			double	videoScaleHeight		= _height / FEEDVIDEO_MAX_HEIGHT;
-			double	videoScaleMax			= (videoScaleWidth > videoScaleHeight ? videoScaleWidth : videoScaleHeight);
-			double	videoScaleFinalWidth	= videoScaleMax > 1 ? _width / videoScaleMax : _width;
-			double	videoScaleFinalHeight	= videoScaleMax > 1 ? _height / videoScaleMax : _height;
+		memset(scaleArg, 0, sizeof(scaleArg));
+		sprintf(scaleArg, "scale=%d:%d:force_original_aspect_ratio=decrease", FEEDVIDEO_MAX_WIDTH, FEEDVIDEO_MAX_HEIGHT);   /* Flawfinder: ignore */
 
-			// Round to nearest even number to avoid ffmpeg codec issues with odd dimensions
-			int		finalWidth				= ((int)videoScaleFinalWidth / 2) * 2;
-			int		finalHeight				= ((int)videoScaleFinalHeight / 2) * 2;
-			
-			// Ensure dimensions are at least 2x2 pixels
-			if(finalWidth < 2) finalWidth = 2;
-			if(finalHeight < 2) finalHeight = 2;
+		argv[0] = const_cast<char *>("ffmpeg");
+		argv[1] = const_cast<char *>("-i");
+		argv[2] = const_cast<char *>(tmpSrcFile.c_str());
+		argv[3] = const_cast<char *>("-pix_fmt");
+		argv[4] = const_cast<char *>("yuv420p");
+		argv[5] = const_cast<char *>("-vf");
+		argv[6] = const_cast<char *>(scaleArg);
+		argv[7] = const_cast<char *>(tmpDstFile.c_str());
+		argv[8] = NULL;
 
-			memset(scaleArg, 0, sizeof(scaleArg));
-			sprintf(scaleArg, "scale=%d:%d", finalWidth, finalHeight);   /* Flawfinder: ignore */
-
-			argv[0] = const_cast<char *>("ffmpeg");
-			argv[1] = const_cast<char *>("-i");
-			argv[2] = const_cast<char *>(tmpSrcFile.c_str());
-			argv[3] = const_cast<char *>("-pix_fmt");
-			argv[4] = const_cast<char *>("yuv420p");
-			argv[5] = const_cast<char *>("-vf");
-			argv[6] = const_cast<char *>(scaleArg);
-			argv[7] = const_cast<char *>(tmpDstFile.c_str());
-			argv[8] = NULL;
-
-			MESSAGE_DEBUG("", "", "video scaled down to " + scaleArg);
-		}
-		else
-		{
-			argv[0] = const_cast<char *>("ffmpeg");
-			argv[1] = const_cast<char *>("-i");
-			argv[2] = const_cast<char *>(tmpSrcFile.c_str());
-			argv[3] = const_cast<char *>("-pix_fmt");
-			argv[4] = const_cast<char *>("yuv420p");
-			argv[5] = const_cast<char *>(tmpDstFile.c_str());
-			argv[6] = NULL;
-
-			MESSAGE_DEBUG("", "", "video not found, probably music only");
-		}
-
+		MESSAGE_DEBUG("", "", "video scaled down to " + scaleArg);
 
 		if(VideoConvert(0, argv))
 		{

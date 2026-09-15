@@ -16,6 +16,7 @@ extern "C"
 {
 #include <libavformat/avformat.h>
 #include <libavutil/dict.h>
+#include <libavutil/display.h>
 }
 #endif
 
